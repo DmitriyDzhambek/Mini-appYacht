@@ -87,41 +87,64 @@ document.getElementById('btnStop').addEventListener('click', stopTracking)
 document.getElementById('saveRoute').addEventListener('click', saveRoute)
 
 function startTracking() {
-    if (tracking.active && !tracking.paused) return
-    
-    tracking.active = true
-    tracking.paused = false
-    
-    if (!tracking.startTime) {
-        tracking.startTime = Date.now()
+    if (tracking.active && !tracking.paused) return;
+
+    // Проверка разрешения на геолокацию
+    if (navigator.permissions && navigator.permissions.query) {
+        navigator.permissions.query({ name: 'geolocation' }).then(function(result) {
+            if (result.state === 'denied') {
+                alert('Для работы трекинга необходимо разрешить доступ к геолокации.');
+                return;
+            } else {
+                startTrackingInternal();
+            }
+        });
+    } else {
+        // Старые браузеры
+        startTrackingInternal();
     }
-    
+}
+
+function startTrackingInternal() {
+    tracking.active = true;
+    tracking.paused = false;
+
+    if (!tracking.startTime) {
+        tracking.startTime = Date.now();
+    }
+
     // Запуск GPS
     if (navigator.geolocation) {
         tracking.watchId = navigator.geolocation.watchPosition(
             position => {
-                const lat = position.coords.latitude
-                const lon = position.coords.longitude
-                const speed = position.coords.speed || 0
-                
-                tracking.positions.push({ lat, lon, speed, time: Date.now() })
-                
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+                const speed = position.coords.speed || 0;
+
+                tracking.positions.push({ lat, lon, speed, time: Date.now() });
+
                 // Расчёт расстояния
                 if (tracking.positions.length > 1) {
-                    const prev = tracking.positions[tracking.positions.length - 2]
-                    const curr = tracking.positions[tracking.positions.length - 1]
-                    const dist = getDistance(prev.lat, prev.lon, curr.lat, curr.lon)
-                    tracking.distance += dist
+                    const prev = tracking.positions[tracking.positions.length - 2];
+                    const curr = tracking.positions[tracking.positions.length - 1];
+                    const dist = getDistance(prev.lat, prev.lon, curr.lat, curr.lon);
+                    tracking.distance += dist;
                 }
-                
-                updateTrackerDisplay()
+
+                updateTrackerDisplay();
             },
-            error => console.log('GPS ошибка:', error),
+            error => {
+                if (error.code === error.PERMISSION_DENIED) {
+                    alert('Доступ к геолокации запрещён. Для работы трекинга разрешите доступ в настройках браузера.');
+                } else {
+                    alert('Ошибка GPS: ' + error.message);
+                }
+            },
             { enableHighAccuracy: true }
-        )
+        );
     }
-    
-    updateTrackerButtons()
+
+    updateTrackerButtons();
 }
 
 function pauseTracking() {

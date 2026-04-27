@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VeloPath — Велоприложение с наградами</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- Главная -->
+        <div class="screen active" id="homeScreen">
+            <div class="header">
+                <h1>🚴 VeloPath</h1>
+                <span class="badge">⭐ <span id="headerStars">0</span></span>
+            </div>
+
+            <div class="stats-cards">
+                <div class="stat-card">
+                    <span class="stat-label">Шагов сегодня</span>
+                    <h2 class="stat-value" id="todaySteps">0</h2>
+                    <span class="stat-icon">👟</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Километров</span>
+                    <h2 class="stat-value" id="todayKm">0</h2>
+                    <span class="stat-icon">📍</span>
+                </div>
+                <div class="stat-card accent">
+                    <span class="stat-label">Баланс Stars</span>
+                    <h2 class="stat-value" id="starsBalance">0</h2>
+                    <span class="stat-icon">⭐</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Баланс ₽</span>
+                    <h2 class="stat-value" id="rubBalance">0</h2>
+                    <span class="stat-icon">💰</span>
+                </div>
+            </div>
+
+            <button class="btn-primary big-btn" id="startTracking">
+                <span>🚀</span> Начать трекинг
+            </button>
+
+            <div class="recent-routes">
+                <h3>Последние маршруты</h3>
+                <div id="routesList">
+                    <div class="route-item empty">Нет сохранённых маршрутов</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Трекер -->
+        <div class="screen" id="trackerScreen">
+            <div class="tracker-header">
+                <button class="btn-back" id="backToHome">← Назад</button>
+                <h2>🗺 Трекер</h2>
+            </div>
+
+            <div class="tracker-stats">
+                <div class="tracker-stat">
+                    <span class="label">Время</span>
+                    <span class="value" id="trackerTime">00:00:00</span>
+                </div>
+                <div class="tracker-stat">
+                    <span class="label">Км</span>
+                    <span class="value" id="trackerKm">0.00</span>
+                </div>
+                <div class="tracker-stat">
+                    <span class="label">Скорость</span>
+                    <span class="value" id="trackerSpeed">0.0</span>
+                </div>
+            </div>
+
+            <div class="tracker-map" id="trackerMap">
+                <div class="map-placeholder">
+                    <span>🗺</span>
+                    <p>Карта маршрута</p>
+                </div>
+            </div>
+
+            <div class="tracker-controls">
+                <button class="btn-tracker" id="btnStart">Старт</button>
+                <button class="btn-tracker pause" id="btnPause">Пауза</button>
+                <button class="btn-tracker stop" id="btnStop">Стоп</button>
+            </div>
+
+            <button class="btn-secondary" id="saveRoute">Сохранить маршрут</button>
+        </div>
+
+        <!-- Кошелёк -->
+        <div class="screen" id="walletScreen">
+            <div class="wallet-header">
+                <button class="btn-back" id="backToHome2">← Назад</button>
+                <h2>💳 Кошелёк</h2>
+            </div>
+
+            <div class="wallet-balance">
+                <div class="balance-card stars">
+                    <span>Telegram Stars</span>
+                    <h3 id="walletStars">0</h3>
+                    <button class="btn-convert" id="convertToStars">Обменять шаги → Stars</button>
+                </div>
+                <div class="balance-card rub">
+                    <span>Рубли</span>
+                    <h3 id="walletRub">0 ₽</h3>
+                    <button class="btn-convert" id="convertToRub">Обменять км → Рубли</button>
+                </div>
+            </div>
+
+            <div class="exchange-rates">
+                <h3>Курс обмена</h3>
+                <div class="rate-item">
+                    <span>1000 шагов</span>
+                    <span>→ 1 ⭐</span>
+                </div>
+                <div class="rate-item">
+                    <span>1 км</span>
+                    <span>→ 10 ₽</span>
+                </div>
+            </div>
+
+            <div class="withdraw-section">
+                <h3>Вывод средств</h3>
+                <div class="withdraw-buttons">
+                    <button class="btn-withdraw">ЮМани</button>
+                    <button class="btn-withdraw">FK Wallet</button>
+                    <button class="btn-withdraw">Telegram</button>
+                </div>
+            </div>
+
+            <div class="transaction-history">
+                <h3>История транзакций</h3>
+                <div id="transactionsList">
+                    <div class="transaction-item empty">Нет транзакций</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Маршруты & Статистика -->
+        <div class="screen" id="routesScreen">
+            <div class="routes-header">
+                <button class="btn-back" id="backToHome3">← Назад</button>
+                <h2>📊 Маршруты</h2>
+            </div>
+
+            <div class="total-stats">
+                <div class="total-stat">
+                    <span class="value" id="totalKm">0</span>
+                    <span class="label">Всего км</span>
+                </div>
+                <div class="total-stat">
+                    <span class="value" id="totalSteps">0</span>
+                    <span class="label">Всего шагов</span>
+                </div>
+                <div class="total-stat">
+                    <span class="value" id="totalEarned">0</span>
+                    <span class="label">Заработано</span>
+                </div>
+            </div>
+
+            <div class="achievements">
+                <h3>🏅 Достижения</h3>
+                <div class="badges-grid">
+                    <div class="badge-item locked" data-badge="first-route">
+                        <span>🌱</span>
+                        <p>Первый маршрут</p>
+                    </div>
+                    <div class="badge-item locked" data-badge="10km">
+                        <span>🏃</span>
+                        <p>10 км</p>
+                    </div>
+                    <div class="badge-item locked" data-badge="100km">
+                        <span>🚀</span>
+                        <p>100 км</p>
+                    </div>
+                    <div class="badge-item locked" data-badge="1000steps">
+                        <span>👟</span>
+                        <p>1000 шагов</p>
+                    </div>
+                    <div class="badge-item locked" data-badge="money">
+                        <span>💰</span>
+                        <p>Вывод денег</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="all-routes">
+                <h3>Все маршруты</h3>
+                <div id="allRoutesList">
+                    <div class="route-item empty">Нет сохранённых маршрутов</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Нижнее меню -->
+        <nav class="bottom-nav">
+            <button class="nav-btn active" data-screen="home">
+                <span>🏠</span>
+                <p>Главная</p>
+            </button>
+            <button class="nav-btn" data-screen="wallet">
+                <span>💳</span>
+                <p>Кошелёк</p>
+            </button>
+            <button class="nav-btn" data-screen="routes">
+                <span>📊</span>
+                <p>Статистика</p>
+            </button>
+        </nav>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,452 @@
+css
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+body {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    min-height: 100vh;
+    color: #fff;
+    overflow-x: hidden;
+}
+
+.app-container {
+    max-width: 480px;
+    margin: 0 auto;
+    min-height: 100vh;
+    position: relative;
+    padding-bottom: 80px;
+}
+
+/* Экраны */
+.screen {
+    display: none;
+    padding: 20px;
+    min-height: 100vh;
+}
+
+.screen.active {
+    display: block;
+}
+
+/* Header */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.header h1 {
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.header .badge {
+    background: linear-gradient(135deg, #ffd700, #ffaa00);
+    color: #1a1a2e;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: 600;
+}
+
+/* Карточки статистики */
+.stats-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.stat-card {
+    background: rgba(255,255,255,0.08);
+    border-radius: 16px;
+    padding: 16px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.stat-card.accent {
+    background: linear-gradient(135deg, rgba(255,215,0,0.2), rgba(255,170,0,0.2));
+    border-color: rgba(255,215,0,0.3);
+}
+
+.stat-label {
+    font-size: 12px;
+    opacity: 0.7;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.stat-value {
+    font-size: 28px;
+    font-weight: 700;
+}
+
+.stat-icon {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 24px;
+    opacity: 0.5;
+}
+
+.stat-card {
+    position: relative;
+    overflow: hidden;
+}
+
+/* Кнопки */
+.btn-primary {
+    width: 100%;
+    padding: 18px;
+    background: linear-gradient(135deg, #00d4ff, #0099cc);
+    border: none;
+    border-radius: 16px;
+    color: white;
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: 20px;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,212,255,0.3);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+.big-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.btn-secondary {
+    width: 100%;
+    padding: 14px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 12px;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    margin-top: 15px;
+}
+
+/* Секции */
+.recent-routes h3, .exchange-rates h3, .withdraw-section h3, .achievements h3, .all-routes h3 {
+    font-size: 16px;
+    margin-bottom: 12px;
+    opacity: 0.9;
+}
+
+.route-item {
+    background: rgba(255,255,255,0.05);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.route-item.empty {
+    opacity: 0.5;
+    font-style: italic;
+}
+
+/* Нижняя навигация */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    max-width: 480px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-around;
+    background: rgba(26,26,46,0.95);
+    backdrop-filter: blur(20px);
+    padding: 12px 10px 20px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.nav-btn {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.5);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.nav-btn span {
+    font-size: 24px;
+}
+
+.nav-btn.active {
+    color: #00d4ff;
+}
+
+/* Экран трекера */
+.tracker-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.btn-back {
+    background: rgba(255,255,255,0.1);
+    border: none;
+    color: white;
+    padding: 10px 16px;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.tracker-stats {
+    display: flex;
+    justify-content: space-around;
+    background: rgba(255,255,255,0.08);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.tracker-stat {
+    text-align: center;
+}
+
+.tracker-stat .label {
+    font-size: 12px;
+    opacity: 0.7;
+    display: block;
+}
+
+.tracker-stat .value {
+    font-size: 24px;
+    font-weight: 700;
+    color: #00d4ff;
+}
+
+.tracker-map {
+    background: rgba(255,255,255,0.05);
+    border-radius: 16px;
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.map-placeholder {
+    text-align: center;
+    opacity: 0.5;
+}
+
+.map-placeholder span {
+    font-size: 48px;
+}
+
+.tracker-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.btn-tracker {
+    flex: 1;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    background: #00d4ff;
+    color: #1a1a2e;
+}
+
+.btn-tracker.pause {
+    background: #ffaa00;
+}
+
+.btn-tracker.stop {
+    background: #ff4757;
+    color: white;
+}
+
+/* Кошелёк */
+.wallet-header, .routes-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.wallet-balance {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.balance-card {
+    background: rgba(255,255,255,0.08);
+    border-radius: 16px;
+    padding: 20px;
+    text-align: center;
+}
+
+.balance-card.stars {
+    border: 1px solid rgba(255,215,0,0.3);
+}
+
+.balance-card.rub {
+    border: 1px solid rgba(0,212,255,0.3);
+}
+
+.balance-card span {
+    font-size: 14px;
+    opacity: 0.7;
+}
+
+.balance-card h3 {
+    font-size: 32px;
+    margin: 10px 0;
+}
+
+.btn-convert {
+    background: linear-gradient(135deg, #ffd700, #ffaa00);
+    border: none;
+    color: #1a1a2e;
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+}
+
+.rate-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 10px;
+    margin-bottom: 8px;
+}
+
+.withdraw-buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.btn-withdraw {
+    flex: 1;
+    min-width: 100px;
+    padding: 12px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 10px;
+    color: white;
+    cursor: pointer;
+}
+
+.transaction-item {
+    padding: 12px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 10px;
+    margin-bottom: 8px;
+}
+
+.transaction-item.empty {
+    opacity: 0.5;
+    font-style: italic;
+}
+
+/* Статистика */
+.total-stats {
+    display: flex;
+    justify-content: space-around;
+    background: rgba(255,255,255,0.08);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.total-stat {
+    text-align: center;
+}
+
+.total-stat .value {
+    font-size: 24px;
+    font-weight: 700;
+    color: #00d4ff;
+    display: block;
+}
+
+.total-stat .label {
+    font-size: 12px;
+    opacity: 0.7;
+}
+
+.badges-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.badge-item {
+    background: rgba(255,255,255,0.05);
+    border-radius: 12px;
+    padding: 15px;
+    text-align: center;
+    opacity: 0.5;
+}
+
+.badge-item:not(.locked) {
+    opacity: 1;
+    background: rgba(255,215,0,0.15);
+    border: 1px solid rgba(255,215,0,0.3);
+}
+
+.badge-item span {
+    font-size: 28px;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.badge-item p {
+    font-size: 11px;
+}
+    cursor: pointer;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(255,255,255,0.5);
+    }
+
+    70% {
+        box-shadow: 0 0 0 30px rgba(255,255,255,0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(255,255,255,0);
+    }
+}

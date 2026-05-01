@@ -12,8 +12,12 @@
       "destination": "/api/index"
     },
     {
-      "source": "/src/(.*)",
-      "destination": "/src/$1"
+      "source": "/src/js/(.*)",
+      "destination": "/src/js/$1"
+    },
+    {
+      "source": "/src/css/(.*)",
+      "destination": "/src/css/$1"
     },
     {
       "source": "/assets/(.*)",
@@ -30,8 +34,12 @@
       "dest": "/api/index"
     },
     {
-      "src": "/src/(.*)",
-      "dest": "/src/$1"
+      "src": "/src/js/(.*)",
+      "dest": "/src/js/$1"
+    },
+    {
+      "src": "/src/css/(.*)",
+      "dest": "/src/css/$1"
     },
     {
       "src": "/assets/(.*)",

@@ -57,51 +57,123 @@ const screens = {
 // Инициализация Telegram WebApp
 let tg, user;
 
-if (window.Telegram && window.Telegram.WebApp) {
-    tg = window.Telegram.WebApp
-    user = tg.initDataUnsafe?.user
-    
-    // Настройка WebApp
-    tg.expand()
-    tg.ready()
-    
-    // Установка темы
-    if (tg.themeParams) {
-        document.documentElement.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color || '#1a1a2e')
-        document.documentElement.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color || '#ffffff')
-        document.documentElement.style.setProperty('--tg-theme-button-color', tg.themeParams.button_color || '#007bff')
-    }
-    
-    // Настройка кнопки "Главный экран"
-    tg.MainButton.setText('VeloPath')
-    tg.MainButton.onClick(() => {
-        showScreen('home')
-    })
-    
-    // Настройка кнопки "Назад"
-    tg.BackButton.onClick(() => {
-        showScreen('home')
-    })
-    
-    // Показываем информацию о пользователе
-    console.log('Telegram user:', user)
-    
-    // Отправка сообщения в чат при достижении
-    if (tg.sendData) {
-        tg.onEvent('viewportChanged', () => {
-            console.log('Viewport changed')
+function initTelegramWebApp() {
+    if (window.Telegram && window.Telegram.WebApp) {
+        tg = window.Telegram.WebApp
+        user = tg.initDataUnsafe?.user
+        
+        // Обработка startapp параметра
+        const startParam = tg.initDataUnsafe?.start_param || 'mini-app-yacht-4hva'
+        console.log('Start parameter:', startParam)
+        
+        // Настройка WebApp
+        tg.expand()
+        tg.ready()
+        
+        // Установка темы
+        if (tg.themeParams) {
+            document.documentElement.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color || '#1a1a2e')
+            document.documentElement.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color || '#ffffff')
+            document.documentElement.style.setProperty('--tg-theme-button-color', tg.themeParams.button_color || '#007bff')
+            document.documentElement.style.setProperty('--tg-theme-secondary-bg-color', tg.themeParams.secondary_bg_color || '#0f0f23')
+            document.documentElement.style.setProperty('--tg-theme-hint-color', tg.themeParams.hint_color || '#999999')
+        }
+        
+        // Настройка кнопки "Главный экран"
+        tg.MainButton.setText('VeloPath')
+        tg.MainButton.onClick(() => {
+            showScreen('home')
         })
-    }
-} else {
-    console.log('Telegram WebApp не найден, используем демо-режим')
-    // Демо пользователь для тестирования
-    user = {
-        id: 12345,
-        first_name: 'Demo',
-        last_name: 'User',
-        username: 'demo_user'
+        
+        // Настройка кнопки "Назад"
+        tg.BackButton.onClick(() => {
+            showScreen('home')
+        })
+        
+        // Настройка заголовка
+        tg.setHeaderColor('#1a1a2e')
+        
+        // Поддержка закрытия приложения
+        tg.onEvent('viewportChanged', () => {
+            console.log('Viewport changed:', tg.viewportHeight)
+        })
+        
+        // Поддержка свайпа назад
+        tg.onEvent('backButtonClicked', () => {
+            showScreen('home')
+        })
+        
+        // Показываем информацию о пользователе
+        console.log('Telegram user:', user)
+        console.log('WebApp version:', tg.version)
+        console.log('Platform:', tg.platform)
+        
+        // Отправка данных при необходимости
+        if (tg.sendData) {
+            window.sendDataToTelegram = (data) => {
+                tg.sendData(JSON.stringify(data))
+            }
+        }
+        
+        // Поддержка платежей
+        if (tg.openInvoice) {
+            window.openTelegramInvoice = (url, callback) => {
+                tg.openInvoice(url, (status) => {
+                    if (callback) callback(status)
+                })
+            }
+        }
+        
+        return true
+    } else {
+        console.log('Telegram WebApp не найден, используем демо-режим')
+        // Демо пользователь для тестирования
+        user = {
+            id: 12345,
+            first_name: 'Demo',
+            last_name: 'User',
+            username: 'demo_user',
+            language_code: 'ru'
+        }
+        
+        // Эмуляция Telegram API для тестирования
+        tg = {
+            expand: () => console.log('Demo: expand()'),
+            ready: () => console.log('Demo: ready()'),
+            themeParams: {
+                bg_color: '#1a1a2e',
+                text_color: '#ffffff',
+                button_color: '#007bff',
+                hint_color: '#999999'
+            },
+            MainButton: {
+                setText: () => console.log('Demo: MainButton.setText()'),
+                onClick: () => console.log('Demo: MainButton.onClick()'),
+                show: () => console.log('Demo: MainButton.show()'),
+                hide: () => console.log('Demo: MainButton.hide()')
+            },
+            BackButton: {
+                onClick: () => console.log('Demo: BackButton.onClick()'),
+                show: () => console.log('Demo: BackButton.show()'),
+                hide: () => console.log('Demo: BackButton.hide()')
+            },
+            setHeaderColor: () => console.log('Demo: setHeaderColor()'),
+            showAlert: (msg) => alert(msg),
+            showConfirm: (msg, callback) => {
+                if (confirm(msg)) callback(true)
+                else callback(false)
+            },
+            sendData: (data) => console.log('Demo: sendData()', data),
+            version: '6.0',
+            platform: 'demo'
+        }
+        
+        return false
     }
 }
+
+// Инициализация при загрузке
+const isTelegram = initTelegramWebApp()
 
 // API класс для взаимодействия с бэкендом
 class API {
@@ -897,11 +969,92 @@ function convertToRubLocally() {
 
 // Вывод средств
 document.getElementById('withdrawStars').addEventListener('click', async () => {
-    const amount = prompt('Сколько Stars вывести?', state.starsBalance)
+    const amount = prompt(`Сколько Stars вывести? (Доступно: ${state.starsBalance} ⭐)`, state.starsBalance)
     if (!amount || amount <= 0 || amount > state.starsBalance) return
     
+    if (isTelegram && tg.openInvoice) {
+        // Используем нативные платежи Telegram
+        try {
+            const invoiceUrl = `https://t.me/VeloPath_Bot?start=withdraw_stars_${amount}`
+            window.openTelegramInvoice(invoiceUrl, (status) => {
+                if (status === 'paid') {
+                    state.starsBalance -= Number(amount)
+                    state.transactions.unshift({
+                        type: 'withdrawal',
+                        amount: Number(amount),
+                        method: 'stars',
+                        status: 'completed',
+                        date: new Date().toLocaleDateString()
+                    })
+                    saveUserData()
+                    updateDisplay()
+                    updateTransactionsList()
+                    tg.showAlert('Вывод Stars выполнен успешно!')
+                } else if (status === 'cancelled') {
+                    tg.showAlert('Операция отменена')
+                } else {
+                    tg.showAlert('Ошибка при выводе Stars')
+                }
+            })
+        } catch (error) {
+            console.error('Telegram invoice error:', error)
+            fallbackWithdrawStars(amount)
+        }
+    } else {
+        fallbackWithdrawStars(amount)
+    }
+})
+
+document.getElementById('withdrawRub').addEventListener('click', async () => {
+    const amount = prompt(`Сколько рублей вывести? (Доступно: ${state.rubBalance} ₽)`, state.rubBalance)
+    if (!amount || amount <= 0 || amount > state.rubBalance) return
+    
+    if (isTelegram) {
+        // Показываем диалог с выбором способа вывода
+        const methods = ['ЮМани', 'FK Wallet', 'QIWI', 'Карта']
+        const methodText = methods.join('\n')
+        const selectedMethod = prompt(`Выберите способ вывода:\n${methodText}\n\nВведите номер способа (1-${methods.length}):`)
+        
+        if (!selectedMethod || selectedMethod < 1 || selectedMethod > methods.length) return
+        
+        const method = methods[selectedMethod - 1]
+        const wallet = prompt(`Введите номер ${method}:`)
+        if (!wallet) return
+        
+        try {
+            const result = await api.withdraw(Number(amount), 'rub', wallet)
+            
+            state.rubBalance -= Number(amount)
+            state.transactions.unshift({
+                type: 'withdrawal',
+                amount: Number(amount),
+                method: 'rub',
+                wallet: wallet,
+                status: 'pending',
+                date: new Date().toLocaleDateString()
+            })
+            
+            await saveUserData()
+            updateDisplay()
+            updateTransactionsList()
+            
+            if (tg && tg.showAlert) {
+                tg.showAlert(`Запрос на вывод ${amount} ₽ на ${method} отправлен!`)
+            } else {
+                alert(`Запрос на вывод ${amount} ₽ на ${method} отправлен!`)
+            }
+        } catch (error) {
+            console.error('Failed to withdraw rub:', error)
+            alert('Ошибка вывода. Попробуйте позже.')
+        }
+    } else {
+        fallbackWithdrawRub(amount)
+    }
+})
+
+function fallbackWithdrawStars(amount) {
     try {
-        const result = await api.withdraw(Number(amount), 'stars', 'telegram')
+        const result = api.withdraw(Number(amount), 'stars', 'telegram')
         
         state.starsBalance -= Number(amount)
         state.transactions.unshift({
@@ -912,30 +1065,23 @@ document.getElementById('withdrawStars').addEventListener('click', async () => {
             date: new Date().toLocaleDateString()
         })
         
-        await saveUserData()
+        saveUserData()
         updateDisplay()
         updateTransactionsList()
         
-        if (tg && tg.showAlert) {
-            tg.showAlert('Запрос на вывод отправлен!')
-        } else {
-            alert('Запрос на вывод отправлен!')
-        }
+        alert(`Запрос на вывод ${amount} Stars отправлен!`)
     } catch (error) {
         console.error('Failed to withdraw stars:', error)
         alert('Ошибка вывода. Попробуйте позже.')
     }
-})
+}
 
-document.getElementById('withdrawRub').addEventListener('click', async () => {
-    const amount = prompt('Сколько рублей вывести?', state.rubBalance)
-    if (!amount || amount <= 0 || amount > state.rubBalance) return
-    
+function fallbackWithdrawRub(amount) {
     const wallet = prompt('Номер кошелька (ЮМани, FK Wallet и т.д.):')
     if (!wallet) return
     
     try {
-        const result = await api.withdraw(Number(amount), 'rub', wallet)
+        const result = api.withdraw(Number(amount), 'rub', wallet)
         
         state.rubBalance -= Number(amount)
         state.transactions.unshift({
@@ -947,20 +1093,16 @@ document.getElementById('withdrawRub').addEventListener('click', async () => {
             date: new Date().toLocaleDateString()
         })
         
-        await saveUserData()
+        saveUserData()
         updateDisplay()
         updateTransactionsList()
         
-        if (tg && tg.showAlert) {
-            tg.showAlert('Запрос на вывод отправлен!')
-        } else {
-            alert('Запрос на вывод отправлен!')
-        }
+        alert(`Запрос на вывод ${amount} ₽ отправлен!`)
     } catch (error) {
         console.error('Failed to withdraw rub:', error)
         alert('Ошибка вывода. Попробуйте позже.')
     }
-})
+}
 
 // Сохранение и загрузка данных
 async function saveUserData() {

@@ -63,7 +63,7 @@ function initTelegramWebApp() {
         user = tg.initDataUnsafe?.user
         
         // Обработка startapp параметра
-        const startParam = tg.initDataUnsafe?.start_param || 'mini-app-yacht-4hva'
+        const startParam = tg.initDataUnsafe?.start_param || 'velopath-mini-app'
         console.log('Start parameter:', startParam)
         
         // Настройка WebApp

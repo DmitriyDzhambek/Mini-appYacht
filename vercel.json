@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "name": "velopath-mini-app",
   "builds": [
     {
       "src": "api/index.js",
@@ -12,12 +13,8 @@
       "destination": "/api/index"
     },
     {
-      "source": "/src/js/(.*)",
-      "destination": "/src/js/$1"
-    },
-    {
-      "source": "/src/css/(.*)",
-      "destination": "/src/css/$1"
+      "source": "/src/(.*)",
+      "destination": "/src/$1"
     },
     {
       "source": "/assets/(.*)",
@@ -25,7 +22,7 @@
     },
     {
       "source": "/(.*)",
-      "destination": "/public/index.html"
+      "destination": "/index.html"
     }
   ],
   "routes": [
@@ -34,12 +31,8 @@
       "dest": "/api/index"
     },
     {
-      "src": "/src/js/(.*)",
-      "dest": "/src/js/$1"
-    },
-    {
-      "src": "/src/css/(.*)",
-      "dest": "/src/css/$1"
+      "src": "/src/(.*)",
+      "dest": "/src/$1"
     },
     {
       "src": "/assets/(.*)",
@@ -47,12 +40,15 @@
     },
     {
       "src": "/(.*)",
-      "dest": "/public/$1"
+      "dest": "/$1"
     }
   ],
   "functions": {
     "api/index.js": {
       "maxDuration": 10
     }
+  },
+  "env": {
+    "NODE_ENV": "production"
   }
 }

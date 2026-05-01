@@ -17,6 +17,17 @@ let state = {
         '100km': false,
         '1000steps': false,
         'money': false
+    },
+    settings: {
+        notifications: true,
+        autoSave: true,
+        theme: 'auto'
+    },
+    stats: {
+        weeklyKm: 0,
+        monthlyKm: 0,
+        avgSpeed: 0,
+        bestRoute: null
     }
 }
 
@@ -28,7 +39,11 @@ let tracking = {
     elapsedTime: 0,
     distance: 0,
     watchId: null,
-    positions: []
+    positions: [],
+    currentSpeed: 0,
+    maxSpeed: 0,
+    elevation: 0,
+    calories: 0
 }
 
 // DOM элементы
@@ -57,8 +72,26 @@ if (window.Telegram && window.Telegram.WebApp) {
         document.documentElement.style.setProperty('--tg-theme-button-color', tg.themeParams.button_color || '#007bff')
     }
     
+    // Настройка кнопки "Главный экран"
+    tg.MainButton.setText('VeloPath')
+    tg.MainButton.onClick(() => {
+        showScreen('home')
+    })
+    
+    // Настройка кнопки "Назад"
+    tg.BackButton.onClick(() => {
+        showScreen('home')
+    })
+    
     // Показываем информацию о пользователе
     console.log('Telegram user:', user)
+    
+    // Отправка сообщения в чат при достижении
+    if (tg.sendData) {
+        tg.onEvent('viewportChanged', () => {
+            console.log('Viewport changed')
+        })
+    }
 } else {
     console.log('Telegram WebApp не найден, используем демо-режим')
     // Демо пользователь для тестирования
@@ -98,6 +131,28 @@ function showScreen(screenName) {
             btn.classList.add('active')
         }
     })
+    
+    // Управление кнопками Telegram
+    if (tg) {
+        if (screenName === 'home') {
+            tg.MainButton.hide()
+            tg.BackButton.hide()
+        } else {
+            tg.MainButton.show()
+            tg.BackButton.show()
+        }
+        
+        // Обновление заголовка
+        if (screenName === 'tracker') {
+            tg.setHeaderColor('#007bff')
+        } else if (screenName === 'wallet') {
+            tg.setHeaderColor('#28a745')
+        } else if (screenName === 'routes') {
+            tg.setHeaderColor('#ffc107')
+        } else {
+            tg.setHeaderColor('#1a1a2e')
+        }
+    }
 }
 
 // Кнопка "Начать трекинг"
@@ -185,27 +240,44 @@ function startTrackingInternal() {
                 const lat = position.coords.latitude;
                 const lon = position.coords.longitude;
                 const speed = position.coords.speed || 0;
+                const timestamp = Date.now();
 
-                tracking.positions.push({ lat, lon, speed, time: Date.now() });
-
-                // Расчёт расстояния
+                tracking.positions.push({ lat, lon, speed, time: timestamp });
+                
+                // Расчет текущей скорости
                 if (tracking.positions.length > 1) {
                     const prev = tracking.positions[tracking.positions.length - 2];
                     const curr = tracking.positions[tracking.positions.length - 1];
                     const dist = getDistance(prev.lat, prev.lon, curr.lat, curr.lon);
+                    const timeDiff = (curr.time - prev.time) / 1000; // в секундах
+                    
                     tracking.distance += dist;
+                    
+                    if (timeDiff > 0) {
+                        tracking.currentSpeed = (dist / timeDiff) * 3.6; // км/ч
+                    }
+                } else {
+                    tracking.currentSpeed = speed * 3.6; // конвертация м/с в км/ч
                 }
 
                 updateTrackerDisplay();
             },
             error => {
                 if (error.code === error.PERMISSION_DENIED) {
-                    alert('Доступ к геолокации запрещён. Для работы трекинга разрешите доступ в настройках браузера.');
+                    if (tg && tg.showAlert) {
+                        tg.showAlert('Доступ к геолокации запрещён. Для работы трекинга разрешите доступ в настройках браузера.');
+                    } else {
+                        alert('Доступ к геолокации запрещён. Для работы трекинга разрешите доступ в настройках браузера.');
+                    }
                 } else {
-                    alert('Ошибка GPS: ' + error.message);
+                    if (tg && tg.showAlert) {
+                        tg.showAlert('Ошибка GPS: ' + error.message);
+                    } else {
+                        alert('Ошибка GPS: ' + error.message);
+                    }
                 }
             },
-            { enableHighAccuracy: true }
+            { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
         );
     }
 
@@ -251,9 +323,19 @@ function updateTrackerDisplay() {
     // Километры
     document.getElementById('trackerKm').textContent = (tracking.distance / 1000).toFixed(2)
     
-    // Скорость (средняя)
+    // Скорость (текущая и средняя)
     const avgSpeed = totalTime > 0 ? (tracking.distance / 1000) / (totalTime / 3600000) : 0
-    document.getElementById('trackerSpeed').textContent = avgSpeed.toFixed(1)
+    const displaySpeed = tracking.currentSpeed > 0 ? tracking.currentSpeed : avgSpeed
+    document.getElementById('trackerSpeed').textContent = displaySpeed.toFixed(1)
+    
+    // Обновление максимальной скорости
+    if (tracking.currentSpeed > tracking.maxSpeed) {
+        tracking.maxSpeed = tracking.currentSpeed
+    }
+    
+    // Расчет калорий (приблизительно)
+    const caloriesPerKm = currentActivity === 'bike' ? 50 : currentActivity === 'run' ? 70 : 40
+    tracking.calories = Math.floor((tracking.distance / 1000) * caloriesPerKm)
 }
 
 function updateTrackerButtons() {

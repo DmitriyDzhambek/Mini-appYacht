@@ -145,6 +145,29 @@
             <div class="routes-header">
                 <button class="btn-back" id="backToHome3">← Назад</button>
                 <h2>📊 Маршруты</h2>
+                <button class="btn-activity-toggle" id="activityToggle">
+                    <span id="currentActivityIcon">🚴</span>
+                </button>
+            </div>
+
+            <!-- Переключатель активности -->
+            <div class="activity-selector" id="activitySelector">
+                <div class="activity-option active" data-activity="bike">
+                    <span>🚴</span>
+                    <p>Велосипед</p>
+                </div>
+                <div class="activity-option" data-activity="run">
+                    <span>🏃</span>
+                    <p>Бег</p>
+                </div>
+                <div class="activity-option" data-activity="walk">
+                    <span>🚶</span>
+                    <p>Ходьба</p>
+                </div>
+                <div class="activity-option" data-activity="rollers">
+                    <span>🛼</span>
+                    <p>Ролики</p>
+                </div>
             </div>
 
             <div class="total-stats">

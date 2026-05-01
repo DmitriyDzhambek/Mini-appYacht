@@ -40,9 +40,34 @@ const screens = {
 }
 
 // Инициализация Telegram WebApp
+let tg, user;
+
 if (window.Telegram && window.Telegram.WebApp) {
-    const tg = window.Telegram.WebApp
+    tg = window.Telegram.WebApp
+    user = tg.initDataUnsafe?.user
+    
+    // Настройка WebApp
     tg.expand()
+    tg.ready()
+    
+    // Установка темы
+    if (tg.themeParams) {
+        document.documentElement.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color || '#1a1a2e')
+        document.documentElement.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color || '#ffffff')
+        document.documentElement.style.setProperty('--tg-theme-button-color', tg.themeParams.button_color || '#007bff')
+    }
+    
+    // Показываем информацию о пользователе
+    console.log('Telegram user:', user)
+} else {
+    console.log('Telegram WebApp не найден, используем демо-режим')
+    // Демо пользователь для тестирования
+    user = {
+        id: 12345,
+        first_name: 'Demo',
+        last_name: 'User',
+        username: 'demo_user'
+    }
 }
 
 // Навигация между экранами
@@ -78,6 +103,46 @@ function showScreen(screenName) {
 // Кнопка "Начать трекинг"
 document.getElementById('startTracking').addEventListener('click', () => {
     showScreen('tracker')
+})
+
+// Переключатель активности
+const activityToggle = document.getElementById('activityToggle')
+const activitySelector = document.getElementById('activitySelector')
+const currentActivityIcon = document.getElementById('currentActivityIcon')
+
+// Состояние активности
+let currentActivity = 'bike'
+const activityIcons = {
+    bike: '🚴',
+    run: '🏃',
+    walk: '🚶',
+    rollers: '🛼'
+}
+
+// Показать/скрыть селектор активности
+activityToggle.addEventListener('click', () => {
+    activitySelector.classList.toggle('show')
+})
+
+// Выбор активности
+document.querySelectorAll('.activity-option').forEach(option => {
+    option.addEventListener('click', () => {
+        // Убрать активность со всех
+        document.querySelectorAll('.activity-option').forEach(o => {
+            o.classList.remove('active')
+        })
+        // Добавить активность выбранной
+        option.classList.add('active')
+        
+        // Обновить текущую активность
+        currentActivity = option.dataset.activity
+        currentActivityIcon.textContent = activityIcons[currentActivity]
+        
+        // Скрыть селектор
+        activitySelector.classList.remove('show')
+        
+        console.log('Выбрана активность:', currentActivity)
+    })
 })
 
 // Управление трекером
@@ -230,28 +295,76 @@ function getDistance(lat1, lon1, lat2, lon2) {
 }
 
 // Сохранение маршрута
-function saveRoute() {
+async function saveRoute() {
     if (tracking.distance < 10) {
-        alert('Маршрут слишком короткий')
+        if (tg && tg.showAlert) {
+            tg.showAlert('Маршрут слишком короткий')
+        } else {
+            alert('Маршрут слишком короткий')
+        }
         return
     }
     
     const route = {
-        id: Date.now(),
-        date: new Date().toLocaleDateString(),
         distance: tracking.distance,
         time: tracking.elapsedTime,
-        positions: [...tracking.positions]
+        positions: [...tracking.positions],
+        activity: currentActivity
     }
+    
+    try {
+        const savedRoute = await api.saveRoute(route)
+        
+        // Обновляем локальное состояние
+        state.routes.unshift(savedRoute.id)
+        state.todayKm += tracking.distance / 1000
+        state.totalKm += tracking.distance / 1000
+        
+        // Проверка достижений
+        checkBadges()
+        
+        // Сохранение данных
+        await saveUserData()
+        
+        // Сброс трекера
+        tracking = {
+            active: false,
+            paused: false,
+            startTime: null,
+            elapsedTime: 0,
+            distance: 0,
+            watchId: null,
+            positions: []
+        }
+        
+        updateDisplay()
+        updateRoutesList()
+        showScreen('home')
+        
+        const message = `Маршрут сохранён! ${(route.distance/1000).toFixed(2)} км`
+        if (tg && tg.showAlert) {
+            tg.showAlert(message)
+        } else {
+            alert(message)
+        }
+    } catch (error) {
+        console.error('Failed to save route:', error)
+        // Fallback - сохраняем локально
+        saveRouteLocally(route)
+    }
+}
+
+function saveRouteLocally(route) {
+    // Локальное сохранение как fallback
+    route.id = Date.now()
+    route.date = new Date().toLocaleDateString()
     
     state.routes.unshift(route)
     state.todayKm += tracking.distance / 1000
     state.totalKm += tracking.distance / 1000
     
-    // Проверка достижений
     checkBadges()
     
-    // Сброс трекера
     tracking = {
         active: false,
         paused: false,
@@ -264,6 +377,7 @@ function saveRoute() {
     
     updateDisplay()
     updateRoutesList()
+    saveUserData()
     showScreen('home')
     
     alert(`Маршрут сохранён! ${(route.distance/1000).toFixed(2)} км`)
@@ -355,12 +469,48 @@ function checkBadges() {
 }
 
 // Конвертация шагов в Stars
-document.getElementById('convertToStars').addEventListener('click', () => {
+document.getElementById('convertToStars').addEventListener('click', async () => {
     if (state.todaySteps < 1000) {
-        alert('Нужно минимум 1000 шагов для обмена!')
+        const message = 'Нужно минимум 1000 шагов для обмена!'
+        if (tg && tg.showAlert) {
+            tg.showAlert(message)
+        } else {
+            alert(message)
+        }
         return
     }
     
+    try {
+        const result = await api.convertToStars(state.todaySteps)
+        
+        state.todaySteps -= result.stars * 1000
+        state.starsBalance += result.stars
+        state.totalSteps += result.stars * 1000
+        
+        state.transactions.unshift({
+            type: 'stars',
+            amount: result.stars,
+            date: new Date().toLocaleDateString()
+        })
+        
+        checkBadges()
+        await saveUserData()
+        updateDisplay()
+        updateTransactionsList()
+        
+        const message = `Обменяно! Получено ${result.stars} ⭐`
+        if (tg && tg.showAlert) {
+            tg.showAlert(message)
+        } else {
+            alert(message)
+        }
+    } catch (error) {
+        console.error('Failed to convert to stars:', error)
+        convertToStarsLocally()
+    }
+})
+
+function convertToStarsLocally() {
     const stars = Math.floor(state.todaySteps / 1000)
     state.todaySteps -= stars * 1000
     state.starsBalance += stars
@@ -373,19 +523,56 @@ document.getElementById('convertToStars').addEventListener('click', () => {
     })
     
     checkBadges()
+    saveUserData()
     updateDisplay()
     updateTransactionsList()
     
     alert(`Обменяно! Получено ${stars} ⭐`)
-})
+}
 
 // Конвертация км в рубли
-document.getElementById('convertToRub').addEventListener('click', () => {
+document.getElementById('convertToRub').addEventListener('click', async () => {
     if (state.todayKm < 1) {
-        alert('Нужно минимум 1 км для обмена!')
+        const message = 'Нужно минимум 1 км для обмена!'
+        if (tg && tg.showAlert) {
+            tg.showAlert(message)
+        } else {
+            alert(message)
+        }
         return
     }
     
+    try {
+        const result = await api.convertToRub(state.todayKm)
+        
+        state.todayKm -= Math.floor(state.todayKm)
+        state.rubBalance += result.rub
+        state.totalEarned += result.rub
+        
+        state.transactions.unshift({
+            type: 'rub',
+            amount: result.rub,
+            date: new Date().toLocaleDateString()
+        })
+        
+        checkBadges()
+        await saveUserData()
+        updateDisplay()
+        updateTransactionsList()
+        
+        const message = `Обменяно! Получено ${result.rub} ₽`
+        if (tg && tg.showAlert) {
+            tg.showAlert(message)
+        } else {
+            alert(message)
+        }
+    } catch (error) {
+        console.error('Failed to convert to rub:', error)
+        convertToRubLocally()
+    }
+})
+
+function convertToRubLocally() {
     const rub = Math.floor(state.todayKm) * 10
     state.todayKm -= Math.floor(state.todayKm)
     state.rubBalance += rub
@@ -398,11 +585,12 @@ document.getElementById('convertToRub').addEventListener('click', () => {
     })
     
     checkBadges()
+    saveUserData()
     updateDisplay()
     updateTransactionsList()
     
     alert(`Обменяно! Получено ${rub} ₽`)
-})
+}
 
 function updateTransactionsList() {
     const list = document.getElementById('transactionsList')
@@ -419,21 +607,319 @@ function updateTransactionsList() {
     }
 }
 
-// Шагомер (имитация)
+// Шагомер (улучшенная версия)
 let stepCounter = 0
-if (window.DeviceMotionEvent) {
-    window.addEventListener('devicemotion', event => {
-        const acc = event.accelerationIncludingGravity
-        if (acc && (Math.abs(acc.x) > 15 || Math.abs(acc.y) > 15 || Math.abs(acc.z) > 15)) {
-            stepCounter++
-            if (stepCounter >= 10) {
+let lastStepTime = 0
+const STEP_THRESHOLD = 500 // минимальный интервал между шагами в мс
+
+function initStepCounter() {
+    if (window.DeviceMotionEvent) {
+        window.addEventListener('devicemotion', handleMotion)
+    } else {
+        // Имитация шагов для тестирования на десктопе
+        setInterval(() => {
+            if (Math.random() > 0.7) {
                 state.todaySteps++
                 state.totalSteps++
-                stepCounter = 0
                 updateDisplay()
+                saveUserData()
+            }
+        }, 3000)
+    }
+}
+
+function handleMotion(event) {
+    const acc = event.accelerationIncludingGravity
+    if (!acc) return
+    
+    const magnitude = Math.sqrt(acc.x * acc.x + acc.y * acc.y + acc.z * acc.z)
+    const currentTime = Date.now()
+    
+    // Проверка порога и интервала
+    if (magnitude > 15 && (currentTime - lastStepTime) > STEP_THRESHOLD) {
+        stepCounter++
+        lastStepTime = currentTime
+        
+        if (stepCounter >= 2) { // Снижаем порог для более точного подсчета
+            state.todaySteps++
+            state.totalSteps++
+            stepCounter = 0
+            updateDisplay()
+            saveUserData()
+            
+            // Проверка достижений
+            if (state.totalSteps >= 1000) {
+                state.badges['1000steps'] = true
+                checkBadges()
             }
         }
+    }
+}
+
+// Инициализация шагомера
+initStepCounter()
+
+// Обработка вывода средств
+document.querySelectorAll('.btn-withdraw').forEach(btn => {
+    btn.addEventListener('click', async () => {
+        const method = btn.textContent.toLowerCase()
+        let amount, wallet
+        
+        if (method === 'telegram') {
+            amount = state.starsBalance
+            if (amount < 1) {
+                const message = 'Недостаточно Stars для вывода!'
+                if (tg && tg.showAlert) {
+                    tg.showAlert(message)
+                } else {
+                    alert(message)
+                }
+                return
+            }
+            
+            // Для Telegram вывода используем встроенный метод
+            if (tg && tg.requestInvoice) {
+                try {
+                    await tg.requestInvoice({
+                        currency: 'XTR',
+                        amount: amount * 100, // Stars в копейках
+                        title: 'Вывод Stars',
+                        description: `Вывод ${amount} Stars на ваш аккаунт`,
+                        provider_token: '',
+                        payload: JSON.stringify({ type: 'withdrawal', amount })
+                    })
+                } catch (error) {
+                    console.error('Invoice request failed:', error)
+                }
+            } else {
+                // Fallback для демо режима
+                processWithdrawal(amount, 'stars', 'telegram')
+            }
+        } else {
+            amount = state.rubBalance
+            if (amount < 10) {
+                const message = 'Минимальная сумма вывода 10 ₽!'
+                if (tg && tg.showAlert) {
+                    tg.showAlert(message)
+                } else {
+                    alert(message)
+                }
+                return
+            }
+            
+            wallet = prompt(`Введите ваш ${method} кошелек для вывода ${amount} ₽:`)
+            if (!wallet) return
+            
+            processWithdrawal(amount, 'rub', method, wallet)
+        }
     })
+})
+
+async function processWithdrawal(amount, currency, method, wallet = '') {
+    try {
+        const result = await api.withdraw(amount, currency, method, wallet)
+        
+        if (result.success) {
+            // Обновляем баланс
+            if (currency === 'stars') {
+                state.starsBalance -= amount
+            } else {
+                state.rubBalance -= amount
+            }
+            
+            state.transactions.unshift({
+                type: 'withdrawal',
+                amount,
+                method,
+                status: 'pending',
+                date: new Date().toLocaleDateString()
+            })
+            
+            await saveUserData()
+            updateDisplay()
+            updateTransactionsList()
+            
+            const message = `Заявка на вывод создана! Сумма: ${amount} ${currency === 'stars' ? '⭐' : '₽'}`
+            if (tg && tg.showAlert) {
+                tg.showAlert(message)
+            } else {
+                alert(message)
+            }
+        }
+    } catch (error) {
+        console.error('Withdrawal failed:', error)
+        // Fallback
+        processWithdrawalLocally(amount, currency, method, wallet)
+    }
+}
+
+function processWithdrawalLocally(amount, currency, method, wallet) {
+    // Локальная обработка как fallback
+    if (currency === 'stars') {
+        state.starsBalance -= amount
+    } else {
+        state.rubBalance -= amount
+    }
+    
+    state.transactions.unshift({
+        type: 'withdrawal',
+        amount,
+        method,
+        wallet,
+        status: 'pending',
+        date: new Date().toLocaleDateString()
+    })
+    
+    saveUserData()
+    updateDisplay()
+    updateTransactionsList()
+    
+    alert(`Заявка на вывод создана! Сумма: ${amount} ${currency === 'stars' ? '⭐' : '₽'}`)
+}
+
+// API класс для работы с бэкендом
+class API {
+    constructor() {
+        this.baseURL = window.location.origin + '/api'
+        this.telegramId = user?.id?.toString() || 'demo'
+    }
+    
+    async request(endpoint, options = {}) {
+        const url = `${this.baseURL}${endpoint}`
+        const headers = {
+            'Content-Type': 'application/json',
+            'telegram-web-app-init-data': tg?.initData || '',
+            ...options.headers
+        }
+        
+        try {
+            const response = await fetch(url, {
+                ...options,
+                headers
+            })
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`)
+            }
+            
+            return await response.json()
+        } catch (error) {
+            console.error('API request failed:', error)
+            // В случае ошибки бэкенда, используем localStorage
+            return this.fallbackRequest(endpoint, options)
+        }
+    }
+    
+    fallbackRequest(endpoint, options) {
+        console.log('Using fallback localStorage for:', endpoint)
+        return new Promise((resolve) => {
+            // Имитация ответа API для оффлайн режима
+            if (endpoint.includes('/user/')) {
+                const userData = localStorage.getItem('velopath_user')
+                resolve(userData ? JSON.parse(userData) : this.getDefaultUser())
+            } else {
+                resolve({ success: true })
+            }
+        })
+    }
+    
+    getDefaultUser() {
+        return {
+            telegramId: this.telegramId,
+            todaySteps: 0,
+            todayKm: 0,
+            starsBalance: 0,
+            rubBalance: 0,
+            totalKm: 0,
+            totalSteps: 0,
+            totalEarned: 0,
+            routes: [],
+            transactions: [],
+            badges: {
+                'first-route': false,
+                '10km': false,
+                '100km': false,
+                '1000steps': false,
+                'money': false
+            }
+        }
+    }
+    
+    async getUser() {
+        return this.request(`/user/${this.telegramId}`)
+    }
+    
+    async updateUser(data) {
+        return this.request(`/user/${this.telegramId}`, {
+            method: 'PUT',
+            body: JSON.stringify(data)
+        })
+    }
+    
+    async saveRoute(routeData) {
+        return this.request(`/routes/${this.telegramId}`, {
+            method: 'POST',
+            body: JSON.stringify(routeData)
+        })
+    }
+    
+    async getRoutes() {
+        return this.request(`/routes/${this.telegramId}`)
+    }
+    
+    async convertToStars(steps) {
+        return this.request(`/convert/stars/${this.telegramId}`, {
+            method: 'POST',
+            body: JSON.stringify({ steps })
+        })
+    }
+    
+    async convertToRub(km) {
+        return this.request(`/convert/rub/${this.telegramId}`, {
+            method: 'POST',
+            body: JSON.stringify({ km })
+        })
+    }
+    
+    async withdraw(amount, method, wallet) {
+        return this.request(`/withdraw/${this.telegramId}`, {
+            method: 'POST',
+            body: JSON.stringify({ amount, method, wallet })
+        })
+    }
+    
+    async getStats() {
+        return this.request(`/stats/${this.telegramId}`)
+    }
+}
+
+const api = new API()
+
+// Загрузка данных пользователя
+async function loadUserData() {
+    try {
+        const userData = await api.getUser()
+        Object.assign(state, userData)
+        updateDisplay()
+        updateRoutesList()
+        updateTransactionsList()
+        checkBadges()
+    } catch (error) {
+        console.error('Failed to load user data:', error)
+    }
+}
+
+// Сохранение данных пользователя
+async function saveUserData() {
+    try {
+        await api.updateUser(state)
+        // Также сохраняем в localStorage как бэкап
+        localStorage.setItem('velopath_user', JSON.stringify(state))
+    } catch (error) {
+        console.error('Failed to save user data:', error)
+        // Сохраняем только в localStorage
+        localStorage.setItem('velopath_user', JSON.stringify(state))
+    }
 }
 
 // Обновление времени каждую секунду
@@ -443,8 +929,10 @@ setInterval(() => {
     }
 }, 1000)
 
+// Периодическое сохранение данных
+setInterval(() => {
+    saveUserData()
+}, 30000) // Каждые 30 секунд
+
 // Инициализация
-updateDisplay()
-updateRoutesList()
-updateTransactionsList()
-updateTrackerButtons()
+loadUserData()

@@ -1,4 +1,14 @@
 css
+/* Telegram Theme Variables */
+:root {
+    --tg-theme-bg-color: #1a1a2e;
+    --tg-theme-text-color: #ffffff;
+    --tg-theme-button-color: #007bff;
+    --tg-theme-hint-color: #999999;
+    --tg-theme-link-color: #2481cc;
+    --tg-theme-secondary-bg-color: #0f0f23;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -12,7 +22,7 @@ body {
     background-position: center;
     background-repeat: no-repeat;
     min-height: 100vh;
-    color: #fff !important;
+    color: var(--tg-theme-text-color);
     overflow-x: hidden;
 }
 
@@ -22,9 +32,10 @@ body {
     min-height: 100vh;
     position: relative;
     padding-bottom: 80px;
-    background: rgba(17, 17, 17, 0.95);
+    background: var(--tg-theme-bg-color);
     border-radius: 18px;
     box-shadow: 0 4px 32px rgba(0,0,0,0.25);
+    transition: background-color 0.3s ease;
 }
 
 /* Экраны */
@@ -110,7 +121,7 @@ body {
 .btn-primary {
     width: 100%;
     padding: 18px;
-    background: linear-gradient(135deg, #00d4ffcc, #0099cccc);
+    background: var(--tg-theme-button-color);
     border: none;
     border-radius: 16px;
     color: white;
@@ -118,12 +129,12 @@ body {
     font-weight: 600;
     cursor: pointer;
     margin-bottom: 20px;
-    transition: transform 0.2s, box-shadow 0.2s;
+    transition: transform 0.2s, box-shadow 0.2s, background-color 0.3s ease;
 }
 
 .btn-primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0,212,255,0.3);
+    box-shadow: 0 8px 25px rgba(0,123,255,0.3);
 }
 
 .btn-primary:active {
@@ -147,6 +158,105 @@ body {
     font-size: 16px;
     cursor: pointer;
     margin-top: 15px;
+}
+
+/* Маршруты & Статистика */
+.routes-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.routes-header h2 {
+    flex: 1;
+}
+
+.btn-activity-toggle {
+    background: var(--tg-theme-button-color);
+    border: none;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    transition: transform 0.2s, box-shadow 0.2s, background-color 0.3s ease;
+}
+
+.btn-activity-toggle:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(0,123,255,0.3);
+}
+
+/* Переключатель активности */
+.activity-selector {
+    display: none;
+    background: rgba(255,255,255,0.08);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 20px;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.activity-selector.show {
+    display: block;
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.activity-selector h4 {
+    font-size: 14px;
+    margin-bottom: 12px;
+    opacity: 0.8;
+}
+
+.activity-options {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+}
+
+.activity-option {
+    background: rgba(255,255,255,0.05);
+    border-radius: 12px;
+    padding: 12px 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 2px solid transparent;
+}
+
+.activity-option:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+.activity-option.active {
+    background: linear-gradient(135deg, rgba(0,212,255,0.2), rgba(0,153,204,0.2));
+    border-color: #00d4ff;
+}
+
+.activity-option span {
+    font-size: 28px;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.activity-option p {
+    font-size: 11px;
+    opacity: 0.8;
 }
 
 /* Секции */
@@ -440,8 +550,6 @@ body {
 
 .badge-item p {
     font-size: 11px;
-}
-    cursor: pointer;
 }
 
 @keyframes pulse {

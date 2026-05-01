@@ -305,6 +305,17 @@ async function saveRoute() {
         return
     }
     
+    // Показываем рекламу для маршрутов длиннее 1 км
+    if (tracking.distance >= 1000) {
+        try {
+            if (typeof show_10942535 === 'function') {
+                await show_10942535()
+            }
+        } catch (error) {
+            console.log('Ad not available, proceeding with route save')
+        }
+    }
+    
     const route = {
         distance: tracking.distance,
         time: tracking.elapsedTime,
@@ -431,32 +442,38 @@ function updateRoutesList() {
 }
 
 // Проверка достижений
-function checkBadges() {
+async function checkBadges() {
     const badges = document.querySelectorAll('.badge-item')
+    const previousBadges = { ...state.badges }
     
     // Первый маршрут
-    if (state.routes.length >= 1) {
+    if (state.routes.length >= 1 && !state.badges['first-route']) {
         state.badges['first-route'] = true
+        await showAchievementAd('first-route', '🌱', 'Первый маршрут!')
     }
     
     // 10 км
-    if (state.totalKm >= 10) {
+    if (state.totalKm >= 10 && !state.badges['10km']) {
         state.badges['10km'] = true
+        await showAchievementAd('10km', '🏃', '10 км пройдено!')
     }
     
     // 100 км
-    if (state.totalKm >= 100) {
+    if (state.totalKm >= 100 && !state.badges['100km']) {
         state.badges['100km'] = true
+        await showAchievementAd('100km', '🚀', '100 км пройдено!')
     }
     
     // 1000 шагов
-    if (state.totalSteps >= 1000) {
+    if (state.totalSteps >= 1000 && !state.badges['1000steps']) {
         state.badges['1000steps'] = true
+        await showAchievementAd('1000steps', '👟', '1000 шагов сделано!')
     }
     
     // Вывод денег
-    if (state.rubBalance > 0) {
+    if (state.rubBalance > 0 && !state.badges['money']) {
         state.badges['money'] = true
+        await showAchievementAd('money', '💰', 'Первый вывод денег!')
     }
     
     // Обновить UI
@@ -466,6 +483,39 @@ function checkBadges() {
             badge.classList.remove('locked')
         }
     })
+}
+
+// Показ рекламы при достижении
+async function showAchievementAd(badgeId, icon, title) {
+    try {
+        if (typeof show_10942535 === 'function') {
+            await show_10942535()
+            
+            // Показываем уведомление о достижении после рекламы
+            const message = `${icon} Поздравляем! Вы разблокировали достижение: ${title}`
+            if (tg && tg.showAlert) {
+                tg.showAlert(message)
+            } else {
+                alert(message)
+            }
+        } else {
+            console.log('Ad not available, showing achievement without ad')
+            const message = `${icon} Поздравляем! Вы разблокировали достижение: ${title}`
+            if (tg && tg.showAlert) {
+                tg.showAlert(message)
+            } else {
+                alert(message)
+            }
+        }
+    } catch (error) {
+        console.log('Error showing achievement ad:', error)
+        const message = `${icon} Поздравляем! Вы разблокировали достижение: ${title}`
+        if (tg && tg.showAlert) {
+            tg.showAlert(message)
+        } else {
+            alert(message)
+        }
+    }
 }
 
 // Конвертация шагов в Stars
@@ -478,6 +528,15 @@ document.getElementById('convertToStars').addEventListener('click', async () => 
             alert(message)
         }
         return
+    }
+    
+    // Показываем рекламу перед конвертацией
+    try {
+        if (typeof show_10942535 === 'function') {
+            await show_10942535()
+        }
+    } catch (error) {
+        console.log('Ad not available, proceeding with conversion')
     }
     
     try {
@@ -540,6 +599,15 @@ document.getElementById('convertToRub').addEventListener('click', async () => {
             alert(message)
         }
         return
+    }
+    
+    // Показываем рекламу перед конвертацией
+    try {
+        if (typeof show_10942535 === 'function') {
+            await show_10942535()
+        }
+    } catch (error) {
+        console.log('Ad not available, proceeding with conversion')
     }
     
     try {

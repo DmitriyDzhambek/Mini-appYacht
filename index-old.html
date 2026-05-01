@@ -207,7 +207,7 @@
                     <p>Главная</p>
                 </button>
                 <button class="nav-btn" data-screen="tracker">
-                    <span>📍</span>
+                    <span>�</span>
                     <p>Трекер</p>
                 </button>
                 <button class="nav-btn" data-screen="wallet">
@@ -232,6 +232,221 @@
             script.src = '/test-app.js';
             document.head.appendChild(script);
         }
+    </script>
+</body>
+                    <div class="route-item empty">Нет сохранённых маршрутов</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Трекер -->
+        <div class="screen" id="trackerScreen">
+            <div class="tracker-header">
+                <button class="btn-back" id="backToHome">← Назад</button>
+                <h2>🗺 Трекер</h2>
+            </div>
+
+            <div class="tracker-stats">
+                <div class="tracker-stat">
+                    <span class="label">Время</span>
+                    <span class="value" id="trackerTime">00:00:00</span>
+                </div>
+                <div class="tracker-stat">
+                    <span class="label">Км</span>
+                    <span class="value" id="trackerKm">0.00</span>
+                </div>
+                <div class="tracker-stat">
+                    <span class="label">Скорость</span>
+                    <span class="value" id="trackerSpeed">0.0</span>
+                </div>
+            </div>
+
+            <div class="tracker-map" id="trackerMap">
+                <div class="map-placeholder">
+                    <span>🗺</span>
+                    <p>Карта маршрута</p>
+                </div>
+            </div>
+
+            <div class="tracker-controls">
+                <button class="btn-tracker" id="btnStart">Старт</button>
+                <button class="btn-tracker pause" id="btnPause">Пауза</button>
+                <button class="btn-tracker stop" id="btnStop">Стоп</button>
+            </div>
+
+            <button class="btn-secondary" id="saveRoute">Сохранить маршрут</button>
+        </div>
+
+        <!-- Кошелёк -->
+        <div class="screen" id="walletScreen">
+            <div class="wallet-header">
+                <button class="btn-back" id="backToHome2">← Назад</button>
+                <h2>💳 Кошелёк</h2>
+            </div>
+
+            <div class="wallet-balance">
+                <div class="balance-card stars">
+                    <span>Telegram Stars</span>
+                    <h3 id="walletStars">0</h3>
+                    <button class="btn-convert" id="convertToStars">Обменять шаги → Stars</button>
+                </div>
+                <div class="balance-card rub">
+                    <span>Рубли</span>
+                    <h3 id="walletRub">0 ₽</h3>
+                    <button class="btn-convert" id="convertToRub">Обменять км → Рубли</button>
+                </div>
+            </div>
+
+            <div class="exchange-rates">
+                <h3>Курс обмена</h3>
+                <div class="rate-item">
+                    <span>1000 шагов</span>
+                    <span>→ 1 ⭐</span>
+                </div>
+                <div class="rate-item">
+                    <span>1 км</span>
+                    <span>→ 10 ₽</span>
+                </div>
+            </div>
+
+            <div class="withdraw-section">
+                <h3>Вывод средств</h3>
+                <div class="withdraw-buttons">
+                    <button class="btn-withdraw">ЮМани</button>
+                    <button class="btn-withdraw">FK Wallet</button>
+                    <button class="btn-withdraw">Telegram</button>
+                </div>
+            </div>
+
+            <div class="transaction-history">
+                <h3>История транзакций</h3>
+                <div id="transactionsList">
+                    <div class="transaction-item empty">Нет транзакций</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Маршруты & Статистика -->
+        <div class="screen" id="routesScreen">
+            <div class="routes-header">
+                <button class="btn-back" id="backToHome3">← Назад</button>
+                <h2>📊 Маршруты</h2>
+                <button class="btn-activity-toggle" id="activityToggle">
+                    <span id="currentActivityIcon">🚴</span>
+                </button>
+            </div>
+
+            <!-- Переключатель активности -->
+            <div class="activity-selector" id="activitySelector">
+                <div class="activity-option active" data-activity="bike">
+                    <span>🚴</span>
+                    <p>Велосипед</p>
+                </div>
+                <div class="activity-option" data-activity="run">
+                    <span>🏃</span>
+                    <p>Бег</p>
+                </div>
+                <div class="activity-option" data-activity="walk">
+                    <span>🚶</span>
+                    <p>Ходьба</p>
+                </div>
+                <div class="activity-option" data-activity="rollers">
+                    <span>🛼</span>
+                    <p>Ролики</p>
+                </div>
+            </div>
+
+            <div class="total-stats">
+                <div class="total-stat">
+                    <span class="value" id="totalKm">0</span>
+                    <span class="label">Всего км</span>
+                </div>
+                <div class="total-stat">
+                    <span class="value" id="totalSteps">0</span>
+                    <span class="label">Всего шагов</span>
+                </div>
+                <div class="total-stat">
+                    <span class="value" id="totalEarned">0</span>
+                    <span class="label">Заработано</span>
+                </div>
+            </div>
+
+            <div class="achievements">
+                <h3>🏅 Достижения</h3>
+                <div class="badges-grid">
+                    <div class="badge-item locked" data-badge="first-route">
+                        <span>🌱</span>
+                        <p>Первый маршрут</p>
+                    </div>
+                    <div class="badge-item locked" data-badge="10km">
+                        <span>🏃</span>
+                        <p>10 км</p>
+                    </div>
+                    <div class="badge-item locked" data-badge="100km">
+                        <span>🚀</span>
+                        <p>100 км</p>
+                    </div>
+                    <div class="badge-item locked" data-badge="1000steps">
+                        <span>👟</span>
+                        <p>1000 шагов</p>
+                    </div>
+                    <div class="badge-item locked" data-badge="money">
+                        <span>💰</span>
+                        <p>Вывод денег</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="all-routes">
+                <h3>Все маршруты</h3>
+                <div id="allRoutesList">
+                    <div class="route-item empty">Нет сохранённых маршрутов</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Нижнее меню -->
+        <nav class="bottom-nav">
+            <button class="nav-btn active" data-screen="home">
+                <span>🏠</span>
+                <p>Главная</p>
+            </button>
+            <button class="nav-btn" data-screen="wallet">
+                <span>💳</span>
+                <p>Кошелёк</p>
+            </button>
+            <button class="nav-btn" data-screen="routes">
+                <span>📊</span>
+                <p>Статистика</p>
+            </button>
+        </nav>
+    </div>
+
+    <script src="/src/js/app.js"></script>
+    <script src="/test-app.js"></script>
+    
+    <!-- Testing Console -->
+    <script>
+        // Auto-run tests when page loads (in development mode)
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            document.addEventListener('DOMContentLoaded', () => {
+                setTimeout(() => {
+                    console.log('🧪 Auto-running tests in development mode...');
+                    if (window.runTests) {
+                        window.runTests();
+                    }
+                }, 2000);
+            });
+        }
+        
+        // Manual test trigger
+        window.runTests = function() {
+            if (typeof runTests === 'function') {
+                runTests();
+            } else {
+                console.log('❌ Test functions not loaded');
+            }
+        };
     </script>
 </body>
 </html>

@@ -237,5 +237,30 @@
     </div>
 
     <script src="script.js"></script>
+    <script src="test-app.js"></script>
+    
+    <!-- Testing Console -->
+    <script>
+        // Auto-run tests when page loads (in development mode)
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            document.addEventListener('DOMContentLoaded', () => {
+                setTimeout(() => {
+                    console.log('🧪 Auto-running tests in development mode...');
+                    if (window.runTests) {
+                        window.runTests();
+                    }
+                }, 2000);
+            });
+        }
+        
+        // Manual test trigger
+        window.runTests = function() {
+            if (typeof runTests === 'function') {
+                runTests();
+            } else {
+                console.log('❌ Test functions not loaded');
+            }
+        };
+    </script>
 </body>
 </html>

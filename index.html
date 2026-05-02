@@ -29,7 +29,19 @@
             overflow-x:hidden;
             -webkit-background-size:cover;
             -moz-background-size:cover;
-            -o-background-size:cover
+            -o-background-size:cover;
+            /* Telegram WebApp optimization */
+            height:100vh;
+            width:100vw;
+            margin:0;
+            padding:0;
+        }
+        
+        /* Telegram WebApp viewport optimization */
+        @supports (height: 100dvh) {
+            body {
+                height: 100dvh;
+            }
         }
         
         /* Responsive image for mobile devices */
@@ -48,6 +60,22 @@
                 background-size: 120% auto;
                 background-position: center center;
                 background-attachment: scroll;
+            }
+        }
+        
+        /* Telegram WebApp specific styles */
+        .telegram-webapp {
+            height: 100vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        /* Safe area for iPhone X and newer */
+        @supports (padding: max(0px)) {
+            .container {
+                padding-left: max(20px, env(safe-area-inset-left));
+                padding-right: max(20px, env(safe-area-inset-right));
+                padding-bottom: max(140px, env(safe-area-inset-bottom));
             }
         }
         body::before{
@@ -249,7 +277,7 @@
         }
     </style>
 </head>
-<body>
+<body class="telegram-webapp">
     <div class="palms">
         <div class="palm">🌴</div>
         <div class="palm">🌴</div>

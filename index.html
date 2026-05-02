@@ -3,37 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VeloPath - Зарабатывай на активности</title>
+    <title>VeloPath</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-        *{margin:0;padding:0;box-sizing:border-box}
-        body{font-family:system-ui,sans-serif;background:#1a1a2e;color:#fff;min-height:100vh;padding:20px}
-        .container{max-width:600px;margin:0 auto}
-        h1{text-align:center;margin-bottom:20px}
-        .card{background:rgba(255,255,255,0.1);border-radius:12px;padding:20px;margin-bottom:15px}
-        .btn{background:#007bff;color:#fff;border:none;padding:15px;border-radius:8px;width:100%;font-size:16px;cursor:pointer;margin:10px 0}
-        .btn:hover{opacity:0.8}
-    </style>
 </head>
 <body>
-    <div class="container">
-        <h1>VeloPath Mini App</h1>
-        <div class="card">
-            <h2>🎉 Добро пожаловать!</h2>
-            <p>Зарабатывай награды за активность</p>
-        </div>
-        <div class="card">
-            <p>Шаги: <span id="steps">0</span></p>
-            <p>Stars: <span id="stars">0</span></p>
-        </div>
-        <button class="btn" onclick="alert('Трекинг скоро будет доступен!')">🚴 Начать трекинг</button>
-        <button class="btn" onclick="alert('Монетизация в разработке!')">💰 Заработать награды</button>
-    </div>
+    <h1>VeloPath Mini App</h1>
+    <p>Зарабатывай награды за активность</p>
+    <p>Шаги: <span id="steps">0</span></p>
+    <p>Stars: <span id="stars">0</span></p>
+    <button onclick="alert('Трекинг!')">🚴 Начать</button>
     <script>
-        let tg = window.Telegram?.WebApp;
+        let tg=window.Telegram?.WebApp;
         if(tg){tg.expand();tg.ready();}
         let steps=0,stars=0;
-        setInterval(()=>{steps+=Math.floor(Math.random()*5)+1;stars+=Math.floor(Math.random()*2);document.getElementById('steps').textContent=steps;document.getElementById('stars').textContent=stars;},2000);
+        setInterval(()=>{steps+=1;stars+=1;document.getElementById('steps').textContent=steps;document.getElementById('stars').textContent=stars;},1000);
     </script>
 </body>
 </html>

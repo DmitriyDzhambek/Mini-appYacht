@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "name": "v0-mini-app-yacht",
+  "name": "mini-app-yacht",
   "rewrites": [
     {
       "source": "/(.*)",

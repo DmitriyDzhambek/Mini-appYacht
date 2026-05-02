@@ -1,4 +1,10 @@
 {
   "version": 2,
-  "name": "mini-app-yacht"
+  "name": "mini-app-yacht-8pmi",
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ]
 }

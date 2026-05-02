@@ -31,6 +31,25 @@
             -moz-background-size:cover;
             -o-background-size:cover
         }
+        
+        /* Responsive image for mobile devices */
+        @media (max-width: 768px) {
+            body {
+                background-image: url('background.jpg');
+                background-size: 100% auto;
+                background-position: top center;
+                background-attachment: fixed;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            body {
+                background-image: url('background.jpg');
+                background-size: 120% auto;
+                background-position: center center;
+                background-attachment: scroll;
+            }
+        }
         body::before{
             content:'';
             position:fixed;

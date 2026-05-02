@@ -311,7 +311,10 @@
                     <div class="value" id="rub">0</div>
                 </div>
             </div>
-            <button class="btn" onclick="startTracker()">🚴 Начать трекинг</button>
+            <div style="display:flex;gap:10px;margin-bottom:15px;">
+                <button class="btn" onclick="startTracker()" style="flex:1;">🚴 Начать трекинг</button>
+                <button class="btn" onclick="showRewardedAd()" style="flex:1;background:#ff8c00;">🎁 Прощай лень</button>
+            </div>
         </div>
 
         <div id="tracker" class="screen">
@@ -352,7 +355,7 @@
         <div id="wallet" class="screen">
             <div class="section">
                 <h3>💰 Заработать награды</h3>
-                <button class="btn" onclick="showRewardedAd()">🎁 Прощай лень</button>
+                <button class="btn" onclick="showRewardedAd()" style="background:#ff8c00;">🎁 Прощай лень</button>
                 <button class="btn secondary" onclick="showOffers()">📋 Выполнить задания</button>
                 <button class="btn secondary" onclick="showAffiliates()">🛒 Партнерские скидки</button>
             </div>
@@ -800,23 +803,24 @@
 
         // Монетизация функции
         function showRewardedAd() {
-            if (typeof show_10942535 === 'function') {
-                show_10942535('pop').then(() => {
-                    alert('Спасибо за просмотр! +5 Stars');
-                    state.stars += 5;
-                    state.transactions.unshift({
-                        type: 'ad',
-                        amount: '+5 ⭐',
-                        date: new Date().toLocaleDateString()
-                    });
-                    updateDisplay();
-                }).catch(e => {
-                    console.log('Ad error:', e);
-                    alert('Прощай лень');
+            // Rewarded Popup
+            show_10942535('pop').then(() => {
+                // user watch ad till the end or close it in interstitial format
+                // your code to reward user for rewarded format
+                alert('Спасибо за просмотр! +5 Stars');
+                state.stars += 5;
+                state.transactions.unshift({
+                    type: 'ad',
+                    amount: '+5 ⭐',
+                    date: new Date().toLocaleDateString()
                 });
-            } else {
+                updateDisplay();
+            }).catch(e => {
+                // user get error during playing ad
+                // do nothing or whatever you want
+                console.log('Ad error:', e);
                 alert('Прощай лень');
-            }
+            });
         }
 
         function showOffers() {

@@ -21,10 +21,15 @@
         body{
             font-family:system-ui,-apple-system,sans-serif;
             background:url('background.jpg') center/cover no-repeat;
+            background-size:cover;
+            background-position:center;
             color:var(--text);
             min-height:100vh;
             position:relative;
-            overflow-x:hidden
+            overflow-x:hidden;
+            -webkit-background-size:cover;
+            -moz-background-size:cover;
+            -o-background-size:cover
         }
         body::before{
             content:'';
@@ -300,7 +305,7 @@
         <div id="wallet" class="screen">
             <div class="section">
                 <h3>💰 Заработать награды</h3>
-                <button class="btn" onclick="showRewardedAd()">🎁 Получить Stars (реклама)</button>
+                <button class="btn" onclick="showRewardedAd()">🎁 Прощай лень</button>
                 <button class="btn secondary" onclick="showOffers()">📋 Выполнить задания</button>
                 <button class="btn secondary" onclick="showAffiliates()">🛒 Партнерские скидки</button>
             </div>
@@ -328,6 +333,16 @@
                 <div class="transactions" id="transactions">
                     <div class="empty-state">Пока нет транзакций</div>
                 </div>
+            </div>
+        </div>
+
+        <div id="habits" class="screen">
+            <div class="section">
+                <h3>🎯 Мои привычки</h3>
+                <div id="habitsList">
+                    <div class="empty-state">Добавьте свои привычки</div>
+                </div>
+                <button class="btn" onclick="addHabit()">➕ Добавить привычку</button>
             </div>
         </div>
 
@@ -383,9 +398,9 @@
                     <span>💳</span>
                     <p>Кошелек</p>
                 </button>
-                <button class="nav-btn" onclick="showScreen('stats')">
-                    <span>📊</span>
-                    <p>Статистика</p>
+                <button class="nav-btn" onclick="showScreen('habits')">
+                    <span>🎯</span>
+                    <p>Привычки</p>
                 </button>
             </div>
         </nav>
@@ -402,7 +417,8 @@
             totalKm: 0,
             totalEarned: 0,
             transactions: [],
-            badges: {first: false, km10: false, money: false}
+            badges: {first: false, km10: false, money: false},
+            habits: []
         };
 
         // Трекер
@@ -681,6 +697,60 @@
             }
         }
 
+        // Привычки функции
+        function addHabit() {
+            if (state.habits.length >= 5) {
+                alert('Максимум 5 привычек!');
+                return;
+            }
+            
+            const habitName = prompt('Название привычки:');
+            if (habitName && habitName.trim()) {
+                state.habits.push({
+                    id: Date.now(),
+                    name: habitName.trim(),
+                    completed: false,
+                    date: new Date().toLocaleDateString()
+                });
+                updateHabitsDisplay();
+                saveState();
+            }
+        }
+        
+        function toggleHabit(id) {
+            const habit = state.habits.find(h => h.id === id);
+            if (habit) {
+                habit.completed = !habit.completed;
+                updateHabitsDisplay();
+                saveState();
+            }
+        }
+        
+        function deleteHabit(id) {
+            if (confirm('Удалить привычку?')) {
+                state.habits = state.habits.filter(h => h.id !== id);
+                updateHabitsDisplay();
+                saveState();
+            }
+        }
+        
+        function updateHabitsDisplay() {
+            const habitsList = document.getElementById('habitsList');
+            if (state.habits.length === 0) {
+                habitsList.innerHTML = '<div class="empty-state">Добавьте свои привычки</div>';
+            } else {
+                habitsList.innerHTML = state.habits.map(habit => `
+                    <div class="habit-item" style="background:rgba(255,255,255,0.1);border-radius:8px;padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <input type="checkbox" ${habit.completed ? 'checked' : ''} onchange="toggleHabit(${habit.id})" style="width:20px;height:20px;">
+                            <span style="${habit.completed ? 'text-decoration:line-through;opacity:0.6;' : ''}">${habit.name}</span>
+                        </div>
+                        <button onclick="deleteHabit(${habit.id})" style="background:red;color:white;border:none;padding:5px 10px;border-radius:5px;cursor:pointer;">🗑️</button>
+                    </div>
+                `).join('');
+            }
+        }
+
         // Монетизация функции
         function showRewardedAd() {
             if (typeof show_10942535 === 'function') {
@@ -695,10 +765,10 @@
                     updateDisplay();
                 }).catch(e => {
                     console.log('Ad error:', e);
-                    alert('Трекинг активирован!');
+                    alert('Прощай лень');
                 });
             } else {
-                alert('Трекинг активирован!');
+                alert('Прощай лень');
             }
         }
 
@@ -779,6 +849,7 @@
         let updateInterval;
         loadState();
         updateDisplay();
+        updateHabitsDisplay();
     </script>
 </body>
 </html>

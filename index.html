@@ -174,7 +174,7 @@
             </div>
         </div>
         
-        <button class="btn" onclick="alert('Трекинг активирован!')">🚴 Прощай лень</button>
+        <button class="btn" onclick="showRewardedAd()">🚴 Прощай лень</button>
     </div>
     
     <script>
@@ -223,6 +223,21 @@
             document.getElementById('steps').textContent=steps.toLocaleString();
             document.getElementById('stars').textContent=stars.toLocaleString();
         },1000);
+        
+        function showRewardedAd(){
+            if(typeof show_10942535==='function'){
+                show_10942535('pop').then(()=>{
+                    alert('Спасибо за просмотр! +5 Stars');
+                    stars+=5;
+                    document.getElementById('stars').textContent=stars.toLocaleString();
+                }).catch(e=>{
+                    console.log('Ad error:',e);
+                    alert('Трекинг активирован!');
+                });
+            }else{
+                alert('Трекинг активирован!');
+            }
+        }
     </script>
 </body>
 </html>

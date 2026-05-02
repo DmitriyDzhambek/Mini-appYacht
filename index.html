@@ -3,7 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VeloPath</title>
+    <title>VeloPath - Зарабатывай на активности</title>
+    <meta name="description" content="Mini App для отслеживания физической активности с наградами в Telegram">
+    
+    <!-- Open Graph для Telegram -->
+    <meta property="og:title" content="VeloPath - Зарабатывай на активности">
+    <meta property="og:description" content="Mini App для отслеживания активности с наградами">
+    <meta property="og:image" content="/assets/logo.png">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://mini-app-yacht.vercel.app">
+    
+    <!-- Telegram WebApp -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
@@ -239,17 +249,62 @@
             activity: 'walk'
         };
 
-        // Telegram
-        let tg = window.Telegram?.WebApp;
-        if (tg) {
-            tg.expand();
-            tg.ready();
-            if (tg.themeParams) {
-                document.documentElement.style.setProperty('--bg', tg.themeParams.bg_color || '#1a1a2e');
-                document.documentElement.style.setProperty('--text', tg.themeParams.text_color || '#ffffff');
-                document.documentElement.style.setProperty('--primary', tg.themeParams.button_color || '#007bff');
+        // Telegram WebApp
+        let tg, user;
+        
+        function initTelegramWebApp() {
+            if (window.Telegram && window.Telegram.WebApp) {
+                tg = window.Telegram.WebApp;
+                user = tg.initDataUnsafe?.user;
+                
+                // Обработка startapp параметра
+                const startParam = tg.initDataUnsafe?.start_param || 'mini-app-yacht';
+                console.log('Start parameter:', startParam);
+                
+                // Настройка WebApp
+                tg.expand();
+                tg.ready();
+                
+                // Установка темы
+                if (tg.themeParams) {
+                    document.documentElement.style.setProperty('--bg', tg.themeParams.bg_color || '#1a1a2e');
+                    document.documentElement.style.setProperty('--text', tg.themeParams.text_color || '#ffffff');
+                    document.documentElement.style.setProperty('--primary', tg.themeParams.button_color || '#007bff');
+                    document.documentElement.style.setProperty('--secondary', tg.themeParams.secondary_bg_color || '#0f0f23');
+                }
+                
+                // Настройка заголовка
+                tg.setHeaderColor('#1a1a2e');
+                
+                // Обработка событий
+                tg.onEvent('viewportChanged', () => {
+                    tg.expand();
+                });
+                
+                tg.onEvent('backButtonClicked', () => {
+                    showScreen('home');
+                });
+                
+                // Глобальные функции для Telegram API
+                window.sendDataToTelegram = (data) => {
+                    if (tg.sendData) {
+                        tg.sendData(JSON.stringify(data));
+                    }
+                };
+                
+                window.openTelegramInvoice = (invoice_url) => {
+                    if (tg.openInvoice) {
+                        tg.openInvoice(invoice_url);
+                    }
+                };
+                
+                return true;
             }
+            return false;
         }
+        
+        // Инициализация при загрузке
+        const telegramReady = initTelegramWebApp();
 
         // Навигация
         function showScreen(screen) {

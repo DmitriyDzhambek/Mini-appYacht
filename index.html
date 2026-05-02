@@ -2,16 +2,19 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>VeloPath - Зарабатывай на активности</title>
     <meta name="description" content="Mini App для отслеживания физической активности с наградами в Telegram">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
     <!-- Open Graph для Telegram -->
     <meta property="og:title" content="VeloPath - Зарабатывай на активности">
     <meta property="og:description" content="Mini App для отслеживания активности с наградами">
-    <meta property="og:image" content="/assets/logo.png">
+    <meta property="og:image" content="background.jpg">
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://mini-app-yacht.vercel.app">
+    <meta property="og:url" content="https://dmitriydzhambek.github.io/Mini-appYacht">
     
     <!-- Telegram WebApp -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -20,25 +23,22 @@
         :root{--bg:#1a1a2e;--text:#fff;--primary:#007bff;--secondary:#0f0f23}
         body{
             font-family:system-ui,-apple-system,sans-serif;
-            background:url('background.jpg') center/cover no-repeat;
+            background:url('background.jpg') center/cover no-repeat fixed;
             background-size:cover;
             background-position:center;
-            background-attachment:fixed;
             color:var(--text);
             min-height:100vh;
+            height:100vh;
+            width:100vw;
+            margin:0;
+            padding:0;
             position:relative;
             overflow-x:hidden;
             -webkit-background-size:cover;
             -moz-background-size:cover;
             -o-background-size:cover;
-            /* Telegram WebApp optimization */
-            height:100vh;
-            width:100vw;
-            margin:0;
-            padding:0;
-            /* Enhanced image display */
-            background-repeat:no-repeat;
-            background-attachment:scroll;
+            -webkit-font-smoothing:antialiased;
+            -moz-osx-font-smoothing:grayscale;
         }
         
         /* Telegram WebApp viewport optimization */
@@ -48,22 +48,54 @@
             }
         }
         
-        /* Responsive image for mobile devices */
+        /* Mobile optimization */
         @media (max-width: 768px) {
             body {
-                background-image: url('background.jpg');
-                background-size: 100% auto;
-                background-position: top center;
-                background-attachment: fixed;
+                background-size: cover;
+                background-position: center;
+                background-attachment: scroll;
+                -webkit-background-size: cover;
+            }
+            
+            .container {
+                padding: 10px;
+                padding-bottom: 120px;
+            }
+            
+            .header {
+                padding: 10px 0;
+            }
+            
+            .nav {
+                padding: 10px;
+                padding-bottom: 20px;
             }
         }
         
         @media (max-width: 480px) {
             body {
-                background-image: url('background.jpg');
-                background-size: 120% auto;
-                background-position: center center;
+                background-size: cover;
+                background-position: center;
                 background-attachment: scroll;
+            }
+            
+            .container {
+                padding: 5px;
+                padding-bottom: 100px;
+            }
+            
+            .grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            
+            .card {
+                padding: 15px;
+            }
+            
+            .btn {
+                padding: 12px 20px;
+                font-size: 14px;
             }
         }
         
@@ -77,9 +109,14 @@
         /* Safe area for iPhone X and newer */
         @supports (padding: max(0px)) {
             .container {
-                padding-left: max(20px, env(safe-area-inset-left));
-                padding-right: max(20px, env(safe-area-inset-right));
-                padding-bottom: max(140px, env(safe-area-inset-bottom));
+                padding-left: max(15px, env(safe-area-inset-left));
+                padding-right: max(15px, env(safe-area-inset-right));
+                padding-bottom: max(120px, env(safe-area-inset-bottom));
+                padding-top: max(10px, env(safe-area-inset-top));
+            }
+            
+            .nav {
+                padding-bottom: max(20px, env(safe-area-inset-bottom));
             }
         }
         body::before{
@@ -900,6 +937,11 @@
             }
         }, 3000);
 
+        // Telegram WebApp initialization
+        window.Telegram.WebApp.ready();
+        window.Telegram.WebApp.expand();
+        window.Telegram.WebApp.enableClosingConfirmation();
+        
         // Инициализация
         let updateInterval;
         loadState();

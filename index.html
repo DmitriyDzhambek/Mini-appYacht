@@ -124,9 +124,22 @@
 
         <div id="wallet" class="screen">
             <div class="section">
+                <h3>💰 Заработать награды</h3>
+                <button class="btn" onclick="showRewardedAd()">🎁 Получить Stars (реклама)</button>
+                <button class="btn secondary" onclick="showOffers()">📋 Выполнить задания</button>
+                <button class="btn secondary" onclick="showAffiliates()">🛒 Партнерские скидки</button>
+            </div>
+
+            <div class="section">
                 <h3>Конвертация</h3>
                 <button class="btn" onclick="convertSteps()">🔄 Шаги → Stars (1000 шагов = 1 ⭐)</button>
                 <button class="btn" onclick="convertKm()">🔄 Км → Рубли (1 км = 10 ₽)</button>
+            </div>
+
+            <div class="section">
+                <h3>💎 Premium функции</h3>
+                <button class="btn" onclick="upgradeToPremium()">👑 Премиум (99₽/мес)</button>
+                <button class="btn secondary" onclick="showReferral()">👥 Пригласить друга</button>
             </div>
 
             <div class="section">
@@ -445,6 +458,94 @@
             if (saved) {
                 state = {...state, ...JSON.parse(saved)};
                 updateDisplay();
+            }
+        }
+
+        // Монетизация функции
+        function showRewardedAd() {
+            if (tg && tg.showAlert) {
+                tg.showAlert('🎁 Получите 5 Stars за просмотр рекламы!');
+                state.stars += 5;
+                state.transactions.unshift({
+                    type: 'ad',
+                    amount: '+5 ⭐',
+                    date: new Date().toLocaleDateString()
+                });
+                updateDisplay();
+            } else {
+                alert('🎁 Получите 5 Stars за просмотр рекламы!');
+                state.stars += 5;
+                state.transactions.unshift({
+                    type: 'ad',
+                    amount: '+5 ⭐',
+                    date: new Date().toLocaleDateString()
+                });
+                updateDisplay();
+            }
+        }
+
+        function showOffers() {
+            const offers = [
+                '🏃 Пробежать 1 км - +10 Stars',
+                '🚶 Пройти 5000 шагов - +15 Stars',
+                '🚴 Проехать 5 км - +20 Stars',
+                '🧘 Медитировать 10 минут - +5 Stars'
+            ];
+            
+            const offer = offers[Math.floor(Math.random() * offers.length)];
+            if (confirm(`📋 Задание: ${offer}\n\nВыполнить?`)) {
+                const bonus = parseInt(offer.match(/\d+/)[0]);
+                state.stars += bonus;
+                state.transactions.unshift({
+                    type: 'offer',
+                    amount: `+${bonus} ⭐`,
+                    date: new Date().toLocaleDateString()
+                });
+                updateDisplay();
+                alert('✅ Задание выполнено! Награда начислена.');
+            }
+        }
+
+        function showAffiliates() {
+            const affiliates = [
+                {name: 'Sportmaster', discount: '15%', url: 'https://sportmaster.ru'},
+                {name: 'Ozon', discount: '10%', url: 'https://ozon.ru'},
+                {name: 'Decathlon', discount: '20%', url: 'https://decathlon.ru'}
+            ];
+            
+            const aff = affiliates[Math.floor(Math.random() * affiliates.length)];
+            if (confirm(`🛒 ${aff.name} - скидка ${aff.discount}% на спорттовары!\n\nПерейти?`)) {
+                window.open(aff.url, '_blank');
+                state.rub += 5;
+                state.transactions.unshift({
+                    type: 'affiliate',
+                    amount: '+5 ₽',
+                    date: new Date().toLocaleDateString()
+                });
+                updateDisplay();
+            }
+        }
+
+        function upgradeToPremium() {
+            if (confirm('👑 Премиум доступ:\n\n• Без рекламы\n• Эксклюзивные маршруты\n• Продвинутая статистика\n\n99₽/месяц\n\nОформить?')) {
+                state.premium = true;
+                state.transactions.unshift({
+                    type: 'premium',
+                    amount: '-99 ₽',
+                    date: new Date().toLocaleDateString()
+                });
+                updateDisplay();
+                alert('✅ Премиум активирован! Спасибо за поддержку!');
+            }
+        }
+
+        function showReferral() {
+            const referralCode = 'VELO' + Math.random().toString(36).substr(2, 9).toUpperCase();
+            const referralLink = `https://t.me/MiniYacht_Bot?startapp=${referralCode}`;
+            
+            if (confirm(`👥 Пригласите друга:\n\nКод: ${referralCode}\nСсылка: ${referralLink}\n\nБонус: 50 Stars за каждого друга!\n\nСкопировать ссылку?`)) {
+                navigator.clipboard.writeText(referralLink);
+                alert('📋 Ссылка скопирована! Поделитесь с друзьями.');
             }
         }
 

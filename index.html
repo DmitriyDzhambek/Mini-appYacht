@@ -221,7 +221,7 @@
             padding:12px;
             z-index:3
         }
-        .nav-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+        .nav-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
         .nav-btn{
             background:none;
             border:none;
@@ -297,6 +297,10 @@
             .tracker-stats{grid-template-columns:1fr}
             .controls{flex-direction:column}
             .activity-types{justify-content:center}
+            .nav-grid{grid-template-columns:repeat(5,1fr);gap:4px}
+            .nav-btn{padding:6px 4px}
+            .nav-btn span{font-size:14px}
+            .nav-btn p{font-size:8px}
         }
     </style>
 </head>
@@ -375,8 +379,6 @@
             <div class="section">
                 <h3>💰 Заработать награды</h3>
                 <button class="btn" onclick="showRewardedAd()" style="background:#ff8c00;">🎁 Прощай лень</button>
-                <button class="btn secondary" onclick="showOffers()">📋 Выполнить задания</button>
-                <button class="btn secondary" onclick="showAffiliates()">🛒 Партнерские скидки</button>
             </div>
 
             <div class="section">
@@ -388,6 +390,8 @@
             <div class="section">
                 <h3>💎 Premium функции</h3>
                 <button class="btn" onclick="upgradeToPremium()">👑 Премиум (99₽/мес)</button>
+                <button class="btn" onclick="showOffers()">📋 Выполнить задания</button>
+                <button class="btn" onclick="showAffiliates()">🛒 Партнерские скидки</button>
                 <button class="btn secondary" onclick="showReferral()">👥 Пригласить друга</button>
             </div>
 
@@ -405,17 +409,9 @@
             </div>
         </div>
 
-        <div id="habits" class="screen">
+        <div id="spheres" class="screen">
             <div class="section">
-                <h3>🎯 Мои привычки</h3>
-                <div id="habitsList">
-                    <div class="empty-state">Добавьте свои привычки</div>
-                </div>
-                <button class="btn" onclick="addHabit()">➕ Добавить привычку</button>
-            </div>
-            
-            <div class="section">
-                <h3>🌟 Сферы жизни</h3>
+                <h3> Сферы жизни</h3>
                 <div id="lifeSpheres">
                     ${Object.keys(state.lifeSpheres).map(sphere => `
                         <div style="background:rgba(255,255,255,0.9);border-radius:8px;padding:12px;margin-bottom:10px;border:1px solid rgba(0,0,0,0.1);">
@@ -435,6 +431,16 @@
                     <div class="empty-state">Нет сохраненных мыслей</div>
                 </div>
                 <button class="btn" onclick="addGeneralThought()">💭 Добавить мысль</button>
+            </div>
+        </div>
+
+        <div id="habits" class="screen">
+            <div class="section">
+                <h3>🎯 Мои привычки</h3>
+                <div id="habitsList">
+                    <div class="empty-state">Добавьте свои привычки</div>
+                </div>
+                <button class="btn" onclick="addHabit()">➕ Добавить привычку</button>
             </div>
         </div>
 
@@ -481,6 +487,10 @@
                 <button class="nav-btn active" onclick="showScreen('home')">
                     <span>🏠</span>
                     <p>Главная</p>
+                </button>
+                <button class="nav-btn" onclick="showScreen('spheres')">
+                    <span>🌟</span>
+                    <p>Сферы</p>
                 </button>
                 <button class="nav-btn" onclick="showScreen('tracker')">
                     <span>📍</span>

@@ -353,6 +353,7 @@
             .nav-btn p{font-size:8px}
         }
     </style>
+<script src="logger.js"></script>
 </head>
 <body class="telegram-webapp">
     <div class="waves"></div>
@@ -575,10 +576,9 @@
 
         <div id="snacks" class="screen">
             <div class="section">
-                <h3>🥪 Меню перекусов</h3>
+                <h3>🥪 Мои перекусы</h3>
                 <div id="snacksList"></div>
-                <button class="btn" onclick="showSnackMenu()">🍽️ Меню перекусов</button>
-                <button class="btn" onclick="addCustomSnack()" style="margin-top:10px;">➕ Добавить свое блюдо</button>
+                <button class="btn" onclick="addCustomSnack()">➕ Добавить перекус</button>
             </div>
             
             <div class="section">
@@ -729,6 +729,7 @@
                 totalReferrals: 0,
                 rewardsReceived: []
             },
+            userActions: [],
             transactions: [],
             badges: [],
             totalSteps: 0,
@@ -2332,6 +2333,27 @@
         }
         
         function saveUserAction(actionType, data) {
+            // Используем новый логгер если доступен
+            if (window.userLogger) {
+                window.userLogger.log(actionType, data);
+            }
+            
+            // Сохраняем в state для совместимости
+            if (!state.userActions) state.userActions = [];
+            state.userActions.push({
+                action: actionType,
+                data: data,
+                timestamp: new Date().toISOString()
+            });
+            
+            // Ограничиваем количество действий
+            if (state.userActions.length > 100) {
+                state.userActions = state.userActions.slice(-100);
+            }
+            
+            saveState();
+            
+            // Отправка на сервер (если доступно)
             const telegramId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
             if (telegramId) {
                 fetch('https://your-payment-server.com/api/save-user-action', {

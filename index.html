@@ -48,6 +48,56 @@
             }
         }
         
+        /* Анимации для партнерских скидок */
+        @keyframes glow {
+            0% { text-shadow: 0 0 5px rgba(0, 123, 255, 0.5); }
+            50% { text-shadow: 0 0 20px rgba(0, 123, 255, 0.8), 0 0 30px rgba(0, 123, 255, 0.6); }
+            100% { text-shadow: 0 0 5px rgba(0, 123, 255, 0.5); }
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes rainbow {
+            0% { color: #ff6b6b; }
+            25% { color: #4ecdc4; }
+            50% { color: #45b7d1; }
+            75% { color: #96ceb4; }
+            100% { color: #ff6b6b; }
+        }
+        
+        .animated-title {
+            animation: glow 2s ease-in-out infinite, slideIn 0.5s ease-out;
+            font-weight: bold;
+            background: linear-gradient(45deg, #007bff, #28a745, #ffc107);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .partner-card {
+            animation: slideIn 0.6s ease-out, pulse 3s ease-in-out infinite;
+            transition: all 0.3s ease;
+        }
+        
+        .partner-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 123, 255, 0.3);
+        }
+        
+        .rainbow-text {
+            animation: rainbow 3s linear infinite;
+            font-weight: bold;
+        }
+        
         /* Mobile optimization */
         @media (max-width: 768px) {
             body {
@@ -394,7 +444,7 @@
                 <h3>💎 Premium функции</h3>
                 <button class="btn" onclick="upgradeToPremium()">👑 Премиум (99₽/99⭐/мес)</button>
                 <button class="btn" onclick="showOffers()">🌟 Публиковать объявления</button>
-                <button class="btn" onclick="showAffiliates()" style="display:none;">🛒 Партнерские скидки</button>
+                <button class="btn" onclick="showAffiliates()">🌍 Партнерские возможности</button>
                 <button class="btn" onclick="showReferral()" style="background: #007bff;">👥 Пригласить друга</button>
             </div>
 
@@ -1381,8 +1431,134 @@
         }
 
         function showAffiliates() {
-            // Функция удалена - теперь используется публикация объявлений
-            alert('Используйте "Выполнить задания" для публикации объявлений');
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position:fixed;top:0;left:0;width:100%;height:100%;
+                background:rgba(0,0,0,0.8);z-index:1000;
+                display:flex;align-items:center;justify-content:center;
+            `;
+            
+            modal.innerHTML = `
+                <div style="background:white;border-radius:12px;padding:20px;margin:20px;max-width:450px;">
+                    <h3 class="animated-title" style="margin:0 0 20px 0;text-align:center;font-size:24px;">
+                        🌍 Партнерские возможности
+                    </h3>
+                    
+                    <div style="text-align:center;margin-bottom:20px;">
+                        <p class="rainbow-text" style="font-size:16px;margin:0 0 10px 0;">
+                            Если Вы управляющий в сфере путешествий и здорового образа жизни
+                        </p>
+                        <p style="font-size:14px;color:#666;margin:0;">
+                            можете рекламировать свой сайт и социальные сети
+                        </p>
+                    </div>
+                    
+                    <div class="partner-card" style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);border-radius:12px;padding:20px;margin-bottom:15px;color:white;">
+                        <h4 style="margin:0 0 10px 0;display:flex;align-items:center;">
+                            ✈️ <span style="margin-left:8px;">Туристические агентства</span>
+                        </h4>
+                        <p style="margin:0 0 15px 0;font-size:14px;opacity:0.9;">
+                            Продвигайте туры, отели, авиабилеты для активных путешественников
+                        </p>
+                        <button class="btn" onclick="contactPartner('travel')" style="background:white;color:#667eea;width:100%;font-weight:bold;">
+                            Начать сотрудничество
+                        </button>
+                    </div>
+                    
+                    <div class="partner-card" style="background:linear-gradient(135deg, #f093fb 0%, #f5576c 100%);border-radius:12px;padding:20px;margin-bottom:15px;color:white;">
+                        <h4 style="margin:0 0 10px 0;display:flex;align-items:center;">
+                            🏃‍♂️ <span style="margin-left:8px;">Фитнес и спорт</span>
+                        </h4>
+                        <p style="margin:0 0 15px 0;font-size:14px;opacity:0.9;">
+                            Рекламируйте спортзалы, оборудование, фитнес-программы
+                        </p>
+                        <button class="btn" onclick="contactPartner('fitness')" style="background:white;color:#f093fb;width:100%;font-weight:bold;">
+                            Начать сотрудничество
+                        </button>
+                    </div>
+                    
+                    <div class="partner-card" style="background:linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);border-radius:12px;padding:20px;margin-bottom:15px;color:white;">
+                        <h4 style="margin:0 0 10px 0;display:flex;align-items:center;">
+                            🥗 <span style="margin-left:8px;">Здоровое питание</span>
+                        </h4>
+                        <p style="margin:0 0 15px 0;font-size:14px;opacity:0.9;">
+                            Продвигайте полезные продукты, диетические программы, доставку
+                        </p>
+                        <button class="btn" onclick="contactPartner('health')" style="background:white;color:#4facfe;width:100%;font-weight:bold;">
+                            Начать сотрудничество
+                        </button>
+                    </div>
+                    
+                    <div class="partner-card" style="background:linear-gradient(135deg, #fa709a 0%, #fee140 100%);border-radius:12px;padding:20px;margin-bottom:15px;color:white;">
+                        <h4 style="margin:0 0 10px 0;display:flex;align-items:center;">
+                            🧘 <span style="margin-left:8px;">Wellness и SPA</span>
+                        </h4>
+                        <p style="margin:0 0 15px 0;font-size:14px;opacity:0.9;">
+                            Рекламируйте SPA-салоны, йога-студии, медитационные курсы
+                        </p>
+                        <button class="btn" onclick="contactPartner('wellness')" style="background:white;color:#fa709a;width:100%;font-weight:bold;">
+                            Начать сотрудничество
+                        </button>
+                    </div>
+                    
+                    <div style="background:#f8f9fa;border-radius:8px;padding:15px;margin-bottom:15px;">
+                        <h4 style="margin:0 0 10px 0;color:#333;">📊 Наши преимущества:</h4>
+                        <ul style="margin:0;padding-left:20px;font-size:14px;color:#666;">
+                            <li>Аудитория активных и мотивированных пользователей</li>
+                            <li>Целевая реклама для сферы путешествий и ЗОЖ</li>
+                            <li>Гибкие условия сотрудничества</li>
+                            <li>Детальная статистика показов и переходов</li>
+                        </ul>
+                    </div>
+                    
+                    <button class="btn secondary" onclick="this.closest('div[style*=position]').remove()" style="width:100%;">
+                        Закрыть
+                    </button>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            modal.onclick = (e) => {
+                if (e.target === modal) modal.remove();
+            };
+            
+            // Сохраняем действие
+            saveUserAction('partners_viewed', {
+                categories: ['travel', 'fitness', 'health', 'wellness']
+            });
+        }
+        
+        function contactPartner(category) {
+            const messages = {
+                travel: 'Спасибо за интерес к туристическому партнерству! Наш менеджер свяжется с вами в течение 24 часов.',
+                fitness: 'Отлично! Мы поможем продвинуть ваш фитнес-бизнес. Ожидайте звонка нашего специалиста.',
+                health: 'Прекрасный выбор! Реклама здорового питания - наша специализация. Свяжемся с вами скоро.',
+                wellness: 'Wonderful! Wellness-партнерство открывает большие возможности. Наш менеджер уже готовится связаться с вами.'
+            };
+            
+            const categoryNames = {
+                travel: 'туристические агентства',
+                fitness: 'фитнес и спорт',
+                health: 'здоровое питание',
+                wellness: 'Wellness и SPA'
+            };
+            
+            alert(messages[category]);
+            
+            // Сохраняем действие
+            saveUserAction('partner_contact_requested', {
+                category: category,
+                category_name: categoryNames[category],
+                timestamp: new Date().toISOString()
+            });
+            
+            // Начисляем бонус за интерес
+            state.stars += 5;
+            addRealTransaction('partner_interest', '+5 ⭐', 'Интерес к партнерству');
+            updateDisplay();
+            
+            // Отправляем уведомление
+            sendBotNotification(`🤝 Пользователь заинтересован партнерством в категории: ${categoryNames[category]}`);
         }
 
         function upgradeToPremium() {

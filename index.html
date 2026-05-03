@@ -356,6 +356,8 @@
 <script src="logger.js"></script>
 <script src="bot-integration.js"></script>
 <script src="bot-commands.js"></script>
+<script src="dynamic-effects.js"></script>
+<link rel="stylesheet" href="dynamic-animations.css">
 </head>
 <body class="telegram-webapp">
     <div class="waves"></div>
@@ -998,6 +1000,9 @@
         // Трекер
         function startTracker() {
             showScreen('tracker');
+            startTracking();
+            setDynamicTracking(true);
+            showDynamicNotification('Трекинг начан! 🏃‍♂️', 'tracking');
         }
 
         function setActivity(type) {
@@ -1379,6 +1384,7 @@
             const habit = state.habits.find(h => h.id === id);
             if (habit) {
                 habit.completed = !habit.completed;
+                animateHabitDynamic(id, habit.completed);
                 updateHabitsDisplay();
                 saveState();
                 saveUserAction('habit_toggled', { 
@@ -1386,6 +1392,10 @@
                     habit_name: habit.name, 
                     completed: habit.completed 
                 });
+                
+                if (habit.completed) {
+                    showDynamicNotification(`Привычка "${habit.name}" выполнена! 🎯`, 'habit');
+                }
             }
         }
         

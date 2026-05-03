@@ -9,7 +9,8 @@
     "build": "echo 'No build step required for static files'",
     "deploy": "vercel --prod",
     "payment": "node payment-server.js",
-    "bot": "node bot-handler.js"
+    "bot": "node bot-handler.js",
+    "bot-python": "python bot.py"
   },
   "dependencies": {
     "express": "^4.18.2",

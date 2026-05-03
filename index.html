@@ -849,6 +849,10 @@
                 });
                 updateDisplay();
                 sendBotNotification(`🔄 Конвертировано ${stars} шагов в Stars`);
+                saveUserAction('steps_converted', { 
+                    steps_converted: stars * 1000, 
+                    stars_earned: stars 
+                });
                 alert(`Конвертировано ${stars} Stars!`);
             } else {
                 alert('Минимум 1000 шагов для конвертации');
@@ -858,6 +862,7 @@
         function convertKm() {
             if (state.km >= 1) {
                 const rub = Math.floor(state.km * 10);
+                const kmConverted = state.km;
                 state.km -= state.km;
                 state.rub += rub;
                 state.totalEarned += rub;
@@ -868,6 +873,10 @@
                 });
                 updateDisplay();
                 sendBotNotification(`🔄 Конвертировано ${rub} км в рубли`);
+                saveUserAction('km_converted', { 
+                    km_converted: kmConverted, 
+                    rubles_earned: rub 
+                });
                 alert(`Конвертировано ${rub} рублей!`);
             } else {
                 alert('Минимум 1 км для конвертации');
@@ -973,15 +982,17 @@
             
             const habitName = prompt('Название привычки:');
             if (habitName && habitName.trim()) {
-                state.habits.push({
+                const habit = {
                     id: Date.now(),
                     name: habitName.trim(),
                     completed: false,
                     date: new Date().toLocaleDateString()
-                });
+                };
+                state.habits.push(habit);
                 updateHabitsDisplay();
                 saveState();
                 sendBotNotification(`🎯 Добавлена привычка: ${habitName.trim()}`);
+                saveUserAction('habit_added', { habit_name: habitName.trim(), habit_id: habit.id });
             }
         }
         
@@ -991,14 +1002,26 @@
                 habit.completed = !habit.completed;
                 updateHabitsDisplay();
                 saveState();
+                saveUserAction('habit_toggled', { 
+                    habit_id: id, 
+                    habit_name: habit.name, 
+                    completed: habit.completed 
+                });
             }
         }
         
         function deleteHabit(id) {
             if (confirm('Удалить привычку?')) {
+                const habit = state.habits.find(h => h.id === id);
                 state.habits = state.habits.filter(h => h.id !== id);
                 updateHabitsDisplay();
                 saveState();
+                if (habit) {
+                    saveUserAction('habit_deleted', { 
+                        habit_id: id, 
+                        habit_name: habit.name 
+                    });
+                }
             }
         }
         
@@ -1273,7 +1296,7 @@
                 };
                 
                 // Отправляем данные на сервер для создания инвойса
-                fetch('https://your-payment-server.com/create-invoice', {
+                fetch('https://your-payment-server.com/api/create-invoice', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1286,7 +1309,7 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        // Открываем инвойс в Telegram
+                        // Открываем инвойс в Telegram через WebApp API
                         window.Telegram.WebApp.openInvoice(data.invoice_url);
                     } else {
                         alert('Ошибка создания платежа: ' + data.error);
@@ -1344,8 +1367,28 @@
             }
         }
         
+        function saveUserAction(actionType, data) {
+            const telegramId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
+            if (telegramId) {
+                fetch('https://your-payment-server.com/api/save-user-action', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        telegram_id: telegramId,
+                        action_type: actionType,
+                        data: data
+                    })
+                }).catch(err => console.log('Save action error:', err));
+            }
+        }
+        
         function resetActivity() {
             if (confirm('🔄 Сбросить всю активность?\n\nЭто обнулит:\n• Текущие шаги\n• Пройденные километры\n• Активный трекинг\n\nПродолжить?')) {
+                const previousSteps = state.steps;
+                const previousKm = state.km;
+                
                 state.steps = 0;
                 state.km = 0;
                 
@@ -1356,6 +1399,10 @@
                 
                 updateDisplay();
                 sendBotNotification('🔄 Активность пользователя сброшена');
+                saveUserAction('activity_reset', { 
+                    previous_steps: previousSteps, 
+                    previous_km: previousKm 
+                });
                 alert('✅ Активность успешно сброшена!');
             }
         }

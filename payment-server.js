@@ -72,6 +72,16 @@ db.serialize(() => {
         metadata TEXT,
         FOREIGN KEY (user_id) REFERENCES users (id)
     )`);
+    
+    db.run(`CREATE TABLE IF NOT EXISTS user_actions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        telegram_id INTEGER,
+        action_type TEXT,
+        data TEXT,
+        message TEXT,
+        timestamp TEXT,
+        FOREIGN KEY (telegram_id) REFERENCES users (telegram_id)
+    )`);
 });
 
 // Express приложение
@@ -85,13 +95,52 @@ app.get('/api/premium-users', (req, res) => {
         FROM users u
         LEFT JOIN payments p ON u.id = p.user_id
         WHERE u.is_premium = 1
-        ORDER BY u.premium_start_date DESC
+        ORDER BY p.payment_date DESC
     `, (err, rows) => {
         if (err) {
             res.status(500).json({ error: err.message });
             return;
         }
         res.json(rows);
+    });
+});
+
+app.post('/api/create-invoice', (req, res) => {
+    const { user_id, invoice_data } = req.body;
+    
+    if (!user_id || !invoice_data) {
+        return res.status(400).json({ 
+            success: false, 
+            error: 'Missing user_id or invoice_data' 
+        });
+    }
+    
+    // Создаем инвойс через Telegram Bot API
+    bot.sendInvoice(user_id, 
+        invoice_data.title,
+        invoice_data.description,
+        invoice_data.payload,
+        '', // provider_token не нужен для цифровых товаров
+        invoice_data.currency,
+        invoice_data.prices,
+        {
+            reply_markup: {
+                inline_keyboard: [[
+                    { text: '👑 Оплатить', pay: true }
+                ]]
+            }
+        }
+    ).then(invoice => {
+        res.json({ 
+            success: true, 
+            invoice_url: invoice.invoice_url 
+        });
+    }).catch(error => {
+        console.error('Invoice creation error:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Failed to create invoice' 
+        });
     });
 });
 
@@ -263,6 +312,13 @@ app.post('/api/bot-notification', (req, res) => {
         return res.status(400).json({ error: 'Missing telegram_id or message' });
     }
     
+    // Сохраняем действие пользователя в базу
+    db.run(`
+        INSERT INTO user_actions 
+        (telegram_id, action_type, message, timestamp)
+        VALUES (?, ?, ?, datetime('now'))
+    `, [telegram_id, 'notification', message]);
+    
     // Отправляем уведомление пользователю в Telegram
     bot.sendMessage(telegram_id, `🔔 VeloPath уведомление:\n\n${message}`)
         .then(() => {
@@ -272,6 +328,42 @@ app.post('/api/bot-notification', (req, res) => {
             console.error('Bot notification error:', err);
             res.status(500).json({ error: 'Failed to send notification' });
         });
+});
+
+// API для сохранения действий пользователя
+app.post('/api/save-user-action', (req, res) => {
+    const { telegram_id, action_type, data } = req.body;
+    
+    if (!telegram_id || !action_type) {
+        return res.status(400).json({ error: 'Missing telegram_id or action_type' });
+    }
+    
+    // Сохраняем действие в базу
+    db.run(`
+        INSERT INTO user_actions 
+        (telegram_id, action_type, data, timestamp)
+        VALUES (?, ?, ?, datetime('now'))
+    `, [telegram_id, action_type, JSON.stringify(data)]);
+    
+    res.json({ success: true, message: 'Action saved' });
+});
+
+// API для получения истории действий пользователя
+app.get('/api/user-actions/:telegram_id', (req, res) => {
+    const telegram_id = req.params.telegram_id;
+    
+    db.all(`
+        SELECT * FROM user_actions 
+        WHERE telegram_id = ?
+        ORDER BY timestamp DESC
+        LIMIT 50
+    `, [telegram_id], (err, rows) => {
+        if (err) {
+            res.status(500).json({ error: err.message });
+            return;
+        }
+        res.json(rows);
+    });
 });
 
 // Страница успешного платежа

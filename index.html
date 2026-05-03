@@ -367,24 +367,7 @@
         </header>
 
         <div id="home" class="screen active">
-            <div class="grid">
-                <div class="card">
-                    <h3>Шаги сегодня</h3>
-                    <div class="value" id="steps">0</div>
-                </div>
-                <div class="card">
-                    <h3>Км сегодня</h3>
-                    <div class="value" id="km">0.00</div>
-                </div>
-                <div class="card">
-                    <h3>Stars</h3>
-                    <div class="value" id="stars">0</div>
-                </div>
-                <div class="card">
-                    <h3>Рубли</h3>
-                    <div class="value" id="rub">0</div>
-                </div>
-            </div>
+            <!-- Пустой главный экран для изображений -->
             <div style="text-align:center;margin-bottom:15px;">
                 <button class="btn" onclick="startTracker()" style="width:80%;max-width:300px;">🚴 Начать трекинг</button>
             </div>
@@ -496,16 +479,113 @@
             <button class="btn" onclick="showScreen('home')" style="width:100%;margin-top:20px;background:#28a745;">🏠 Вернуться на главное меню</button>
         </div>
 
-        <div id="wallet" class="screen">
+        <div id="life" class="screen">
+            <div class="section">
+                <h3>💝 Влюбиться в жизнь</h3>
+                <div class="grid">
+                    <div class="card">
+                        <h3>Шаги сегодня</h3>
+                        <div class="value" id="life-steps">0</div>
+                    </div>
+                    <div class="card">
+                        <h3>Км сегодня</h3>
+                        <div class="value" id="life-km">0.00</div>
+                    </div>
+                    <div class="card">
+                        <h3>Stars</h3>
+                        <div class="value" id="life-stars">0</div>
+                    </div>
+                    <div class="card">
+                        <h3>Рубли</h3>
+                        <div class="value" id="life-rub">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>📊 Общая статистика</h3>
+                <div class="grid">
+                    <div class="card">
+                        <h3>Всего шагов</h3>
+                        <div class="value" id="total-steps">0</div>
+                    </div>
+                    <div class="card">
+                        <h3>Всего км</h3>
+                        <div class="value" id="total-km">0.00</div>
+                    </div>
+                    <div class="card">
+                        <h3>Всего заработано</h3>
+                        <div class="value" id="total-earned">0₽</div>
+                    </div>
+                    <div class="card">
+                        <h3>Привычек выполнено</h3>
+                        <div class="value" id="habits-completed">0/0</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>🎯 Достижения</h3>
+                <div class="grid">
+                    <div class="card">
+                        <h3>Перекусов</h3>
+                        <div class="value" id="snacks-count">0</div>
+                    </div>
+                    <div class="card">
+                        <h3>Записей в дневнике</h3>
+                        <div class="value" id="diary-count">0</div>
+                    </div>
+                    <div class="card">
+                        <h3>Друзей приглашено</h3>
+                        <div class="value" id="referrals-count">0</div>
+                    </div>
+                    <div class="card">
+                        <h3>Premium статус</h3>
+                        <div class="value" id="premium-status">❌</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>🔄 Конвертация</h3>
+                <button class="btn" onclick="convertSteps()">🔄 Шаги → Stars (1000 шагов = 1 ⭐)</button>
+                <button class="btn" onclick="convertKm()">🔄 Км → Рубли (1 км = 10 ₽)</button>
+            </div>
+
+            <div class="section">
+                <h3>💎 Premium функции</h3>
+                <button class="btn" onclick="upgradeToPremium()">👑 Премиум (99₽/99⭐/мес)</button>
+                <button class="btn" onclick="showOffers()">🌟 Публиковать объявления</button>
+                <button class="btn" onclick="showAffiliates()">🌍 Партнерские возможности</button>
+                <button class="btn" onclick="showReferral()" style="background: #007bff;">👥 Пригласить друга</button>
+            </div>
+
             <div class="section">
                 <h3>💰 Заработать награды</h3>
                 <button class="btn" onclick="showRewardedAd()" style="background:#ff8c00;">🎁 Прощай лень</button>
             </div>
 
             <div class="section">
-                <h3>Конвертация</h3>
-                <button class="btn" onclick="convertSteps()">🔄 Шаги → Stars (1000 шагов = 1 ⭐)</button>
-                <button class="btn" onclick="convertKm()">🔄 Км → Рубли (1 км = 10 ₽)</button>
+                <h3>История</h3>
+                <div class="transactions" id="transactions">
+                    <div class="empty-state">Пока нет транзакций</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="wallet" class="screen">
+            <div class="section">
+                <h3>💳 Мой кошелек</h3>
+                <div class="wallet-stats">
+                    <div class="wallet-card">
+                        <span>⭐ Stars</span>
+                        <span id="walletStars">0</span>
+                    </div>
+                    <div class="wallet-card">
+                        <span>₽ Рубли</span>
+                        <span id="walletRub">0</span>
+                    </div>
+                </div>
             </div>
 
             <div class="section">
@@ -677,6 +757,10 @@
                 <button class="nav-btn" onclick="showScreen('bike')">
                     <span>🚴</span>
                     <p>Велосипед</p>
+                </button>
+                <button class="nav-btn" onclick="showScreen('life')">
+                    <span>💝</span>
+                    <p>Влюбиться в жизнь</p>
                 </button>
                 <button class="nav-btn" onclick="showScreen('wallet')">
                     <span>💳</span>
@@ -1204,14 +1288,35 @@
 
         // Обновление дисплея
         function updateDisplay() {
-            document.getElementById('steps').textContent = Math.floor(state.steps).toLocaleString();
-            document.getElementById('km').textContent = state.km.toFixed(2);
-            document.getElementById('stars').textContent = state.stars;
-            document.getElementById('rub').textContent = state.rub;
-            document.getElementById('totalSteps').textContent = Math.floor(state.totalSteps).toLocaleString();
-            document.getElementById('totalKm').textContent = state.totalKm.toFixed(2);
-            document.getElementById('totalEarned').textContent = state.totalEarned;
+            // Обновляем вкладку "Влюбиться в жизнь"
+            document.getElementById('life-steps').textContent = state.steps.toLocaleString();
+            document.getElementById('life-km').textContent = state.km.toFixed(2);
+            document.getElementById('life-stars').textContent = state.stars.toLocaleString();
+            document.getElementById('life-rub').textContent = state.rub.toLocaleString();
             
+            // Обновляем общую статистику
+            document.getElementById('total-steps').textContent = state.totalSteps.toLocaleString();
+            document.getElementById('total-km').textContent = state.totalKm.toFixed(2);
+            document.getElementById('total-earned').textContent = state.totalEarned + '₽';
+            
+            const completedHabits = state.habits.filter(h => h.completed).length;
+            document.getElementById('habits-completed').textContent = `${completedHabits}/${state.habits.length}`;
+            
+            // Обновляем достижения
+            document.getElementById('snacks-count').textContent = state.snacks.length;
+            document.getElementById('diary-count').textContent = state.diary.length;
+            document.getElementById('referrals-count').textContent = state.referral.totalReferrals;
+            document.getElementById('premium-status').textContent = state.premium ? '✅' : '❌';
+            
+            // Обновляем кошелек
+            document.getElementById('walletStars').textContent = state.stars.toLocaleString();
+            document.getElementById('walletRub').textContent = state.rub.toLocaleString();
+            
+            // Обновляем историю транзакций
+            updateTransactions();
+        }
+
+        function updateTransactions() {
             const transactionsEl = document.getElementById('transactions');
             // Показываем только реальные транзакции (isReal: true) или выводы средств
             const realTransactions = state.transactions.filter(t => t.isReal === true || t.type === 'withdrawal');

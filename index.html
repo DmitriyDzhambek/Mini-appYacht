@@ -999,10 +999,9 @@
 
         // Трекер
         function startTracker() {
-            showScreen('tracker');
-            startTracking();
             setDynamicTracking(true);
             showDynamicNotification('Трекинг начан! 🏃‍♂️', 'tracking');
+            startTracking();
         }
 
         function setActivity(type) {
@@ -1141,6 +1140,8 @@
 
         function stopTracking() {
             tracking.active = false;
+            setDynamicTracking(false);
+            showDynamicNotification('Трекинг остановлен! 🏁', 'tracking');
             
             // Удаляем слушателей событий движения
             if (window.DeviceMotionEvent) {
@@ -1416,19 +1417,15 @@
         
         function updateHabitsDisplay() {
             const habitsList = document.getElementById('habitsList');
+            if (!habitsList) return;
+            
             if (state.habits.length === 0) {
-                habitsList.innerHTML = '<div class="empty-state">Добавьте свои привычки</div>';
+                habitsList.innerHTML = '<div class="empty-state">Нет привычек</div>';
             } else {
                 habitsList.innerHTML = state.habits.map(habit => `
-                    <div class="habit-item" style="background:rgba(255,255,255,0.9);border-radius:8px;padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;border:1px solid rgba(0,0,0,0.1);">
-                        <div style="flex:1;">
-                            <div style="font-weight:bold;color:#333;">${habit.name}</div>
-                            <div style="font-size:12px;color:#666;">${habit.date}</div>
-                        </div>
-                        <div style="display:flex;gap:8px;align-items:center;">
-                            <input type="checkbox" ${habit.completed ? 'checked' : ''} onchange="toggleHabit(${habit.id})" style="transform:scale(1.2);">
-                            <button onclick="deleteHabit(${habit.id})" style="background:#ff4444;color:white;border:none;padding:5px 10px;border-radius:5px;cursor:pointer;">🗑️</button>
-                        </div>
+                    <div class="habit-item ${habit.completed ? 'completed' : ''}" data-habit-id="${habit.id}" onclick="toggleHabit(${habit.id})">
+                        <span>${habit.completed ? '✅' : '❌'} ${habit.name}</span>
+                        <button onclick="deleteHabit(${habit.id})" style="background:#ff4444;color:white;border:none;padding:5px 10px;border-radius:5px;cursor:pointer;">🗑️</button>
                     </div>
                 `).join('');
             }
@@ -1437,34 +1434,6 @@
             saveUserAction('habits_display_updated', { 
                 habits_count: state.habits.length,
                 completed_count: state.habits.filter(h => h.completed).length
-            });
-            updateLifeSpheresDisplay();
-            updateThoughtsDisplay();
-        }
-        
-        function updateLifeSpheresDisplay() {
-            Object.keys(state.lifeSpheres).forEach(sphere => {
-                const sphereDiv = document.getElementById(`sphere-${sphere}`);
-                if (sphereDiv) {
-                    const thoughts = state.lifeSpheres[sphere];
-                    if (thoughts.length === 0) {
-                        sphereDiv.innerHTML = '<div class="empty-state" style="font-size:12px;color:#666;">Нет мыслей</div>';
-                    } else {
-                        sphereDiv.innerHTML = thoughts.map((thought, index) => `
-                            <div style="background:rgba(255,255,255,0.8);border-radius:5px;padding:8px;margin-bottom:5px;border:1px solid rgba(0,0,0,0.1);">
-                                <div style="font-size:12px;color:#333;">${thought.text}</div>
-                                <div style="font-size:10px;color:#666;">${thought.date}</div>
-                                <button onclick="deleteThought('${sphere}', ${index})" style="background:#ff4444;color:white;border:none;padding:2px 6px;border-radius:3px;cursor:pointer;font-size:10px;">🗑️</button>
-                            </div>
-                        `).join('');
-                    }
-                }
-            });
-            // Автоматически сохраняем при каждом обновлении
-            saveState();
-            saveUserAction('life_spheres_display_updated', { 
-                spheres_count: Object.keys(state.lifeSpheres).length,
-                total_thoughts: Object.values(state.lifeSpheres).reduce((sum, thoughts) => sum + thoughts.length, 0)
             });
         }
         

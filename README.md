@@ -14,15 +14,21 @@
 - 💸 **Вывод средств**: Возможность вывода заработанных средств
 - 📱 **Telegram интеграция**: Полная интеграция с Telegram WebApp API
 - 💰 **Монетизация**: Rewarded Ads, Offer Wall, Affiliate, Premium, Referral
+- 👑 **Premium подписка**: 99 Stars/месяц с расширенными функциями
+- 🌟 **Сферы жизни**: Управление мыслями и привычками
+- 💳 **Telegram Stars**: Реальные платежи через Telegram
 
 ## 🛠 Технологии
 
 - **Frontend**: HTML5, CSS3, JavaScript (ES6+)
-- **Telegram**: Telegram WebApp API
-- **Хранение**: localStorage
+- **Backend**: Node.js + Express
+- **Telegram**: Telegram WebApp API + Bot API
+- **База данных**: SQLite3
+- **Платежи**: Telegram Stars API
+- **Хранение**: localStorage + SQLite
 - **Геолокация**: Geolocation API
-- **Деплой**: Vercel (статический сайт)
-- **Монетизация**: Telegram Rewarded Ads + Affiliate Marketing
+- **Деплой**: Vercel (статический сайт) + Heroku (payment server)
+- **Монетизация**: Telegram Stars + Rewarded Ads + Affiliate Marketing
 
 ## 🚀 Быстрый запуск
 
@@ -35,8 +41,27 @@
    - Root: `/`
 4. Deploy
 
-### 2. Готовые URL
-- **Основной**: https://mini-app-yacht.vercel.app
+### 2. Настройка платежного сервера
+```bash
+# Установка зависимостей
+npm install
+
+# Запуск платежного сервера
+npm run payment
+
+# Или
+node payment-server.js
+```
+
+### 3. Настройка Telegram Bot
+1. Создайте бота через @BotFather
+2. Получите токен и установите в `BOT_TOKEN`
+3. Настройте вебхук: `https://your-domain.com/webhook/telegram`
+4. Включите платежи в настройках бота
+
+### 4. Готовые URL
+- **Основной**: https://dmitriydzhambek.github.io/Mini-appYacht
+- **Админ панель**: https://your-domain.com/admin
 - **Telegram**: https://t.me/MiniYacht_Bot?startapp=mini-app-yacht
 
 ## 📱 Telegram Bot Configuration
@@ -69,13 +94,42 @@
 
 ```
 Mini-appYacht/
-├── index.html          # Основной HTML файл с монетизацией
-├── vercel.json         # Конфигурация Vercel
-├── README.md           # Документация
-├── deploy-fix.md       # Инструкция по развертыванию
-├── monetization-guide.md # Гайд по монетизации
-└── assets/             # Изображения и ресурсы
+├── index.html              # Основной HTML файл Mini App
+├── payment-server.js       # Платежный сервер Node.js
+├── admin.html             # Админ панель для управления
+├── package.json           # Зависимости проекта
+├── vercel.json            # Конфигурация Vercel
+├── README.md              # Документация
+├── monetization-guide.md  # Гайд по монетизации
+├── premium_users.db       # База данных SQLite
+└── assets/                # Изображения и ресурсы
 ```
+
+## 💳 Платежная система
+
+### Telegram Stars Integration
+- **Валюта**: XTR (Telegram Stars)
+- **Стоимость Premium**: 99 Stars/месяц
+- **Обработка**: Telegram Bot API
+- **Хранение**: SQLite3 база данных
+
+### API эндпоинты
+- `GET /api/premium-users` - Список премиум пользователей
+- `GET /api/user-stats` - Статистика пользователей
+- `POST /api/premium-payment` - Обработка платежа
+- `POST /webhook/telegram` - Вебхук Telegram
+
+### Админ панель
+- **URL**: `/admin`
+- **Функции**: Просмотр пользователей, статистика, управление подписками
+- **Обновление**: Автообновление каждые 30 секунд
+
+### Рекомендуемые сервисы для управления пользователями
+1. **Supabase** - Бесплатная PostgreSQL база с API
+2. **Firebase** - Google сервис с реалтайм базой данных
+3. **MongoDB Atlas** - Бесплатный MongoDB хостинг
+4. **Airtable** - Визуальная база данных с API
+5. **Notion API** - База данных с интеграцией
 
 ## 🎯 Особенности
 

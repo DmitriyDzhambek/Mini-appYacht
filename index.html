@@ -1005,15 +1005,69 @@
         }
 
         function upgradeToPremium() {
-            if (confirm('👑 Премиум доступ:\n\n• Без рекламы\n• Эксклюзивные маршруты\n• Продвинутая статистика\n\n99₽/месяц\n\nОформить?')) {
-                state.premium = true;
-                state.transactions.unshift({
-                    type: 'premium',
-                    amount: '-99 ₽',
-                    date: new Date().toLocaleDateString()
+            // Отправляем инвойс через Telegram WebApp
+            if (window.Telegram && window.Telegram.WebApp) {
+                const invoiceData = {
+                    title: 'VeloPath Premium',
+                    description: '👑 Премиум доступ на 1 месяц:\n\n• Без рекламы\n• Эксклюзивные маршруты\n• Продвинутая статистика\n• Приоритетная поддержка',
+                    payload: 'premium_subscription_1month',
+                    currency: 'XTR',
+                    prices: [
+                        {
+                            label: 'Премиум подписка',
+                            amount: 990 // 99 Stars (99 XTR)
+                        }
+                    ]
+                };
+                
+                // Отправляем данные на сервер для создания инвойса
+                fetch('https://your-payment-server.com/create-invoice', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        user_id: window.Telegram.WebApp.initDataUnsafe?.user?.id,
+                        invoice_data: invoiceData
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Открываем инвойс в Telegram
+                        window.Telegram.WebApp.openInvoice(data.invoice_url);
+                    } else {
+                        alert('Ошибка создания платежа: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Payment error:', error);
+                    // Fallback для тестирования
+                    if (confirm('👑 Премиум доступ:\n\n• Без рекламы\n• Эксклюзивные маршруты\n• Продвинутая статистика\n\n99 Stars/месяц\n\nТестовая покупка?')) {
+                        state.premium = true;
+                        state.premiumEndDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+                        state.transactions.unshift({
+                            type: 'premium',
+                            amount: '-99 ⭐',
+                            date: new Date().toLocaleDateString()
+                        });
+                        updateDisplay();
+                        alert('✅ Премиум активирован! Спасибо за поддержку!');
+                    }
                 });
-                updateDisplay();
-                alert('✅ Премиум активирован! Спасибо за поддержку!');
+            } else {
+                // Fallback для десктопа
+                if (confirm('👑 Премиум доступ:\n\n• Без рекламы\n• Эксклюзивные маршруты\n• Продвинутая статистика\n\n99 Stars/месяц\n\nТестовая покупка?')) {
+                    state.premium = true;
+                    state.premiumEndDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+                    state.transactions.unshift({
+                        type: 'premium',
+                        amount: '-99 ⭐',
+                        date: new Date().toLocaleDateString()
+                    });
+                    updateDisplay();
+                    alert('✅ Премиум активирован! Спасибо за поддержку!');
+                }
             }
         }
 

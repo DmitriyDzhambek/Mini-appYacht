@@ -2,16 +2,19 @@
   "name": "velopath-mini-app",
   "version": "1.0.0",
   "description": "VeloPath Telegram Mini App - Fitness tracking with rewards",
-  "main": "index.html",
+  "main": "payment-server.js",
   "scripts": {
-    "start": "node api/index.js",
+    "start": "node payment-server.js",
     "dev": "vercel dev",
     "build": "echo 'No build step required for static files'",
-    "deploy": "vercel --prod"
+    "deploy": "vercel --prod",
+    "payment": "node payment-server.js"
   },
   "dependencies": {
     "express": "^4.18.2",
-    "cors": "^2.8.5"
+    "cors": "^2.8.5",
+    "node-telegram-bot-api": "^0.63.0",
+    "sqlite3": "^5.1.6"
   },
   "devDependencies": {
     "vercel": "^32.3.1"
@@ -22,7 +25,9 @@
     "fitness",
     "tracking",
     "velo-path",
-    "rewards"
+    "rewards",
+    "payments",
+    "premium"
   ],
   "author": "Dmitriy Dzhambek",
   "license": "MIT",
@@ -30,5 +35,5 @@
     "type": "git",
     "url": "https://github.com/DmitriyDzhambek/Mini-appYacht.git"
   },
-  "homepage": "https://vercel.com/dmitriydzhambeks-projects/mini-app-yacht-4hva-"
+  "homepage": "https://dmitriydzhambek.github.io/Mini-appYacht"
 }

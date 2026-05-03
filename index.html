@@ -354,6 +354,8 @@
         }
     </style>
 <script src="logger.js"></script>
+<script src="bot-integration.js"></script>
+<script src="bot-commands.js"></script>
 </head>
 <body class="telegram-webapp">
     <div class="waves"></div>
@@ -2352,6 +2354,48 @@
             }
             
             saveState();
+            
+            // Отправка уведомлений в бот для важных действий
+            if (window.botIntegration && window.botIntegration.isInitialized) {
+                switch (actionType) {
+                    case 'habit_added':
+                    case 'habit_toggled':
+                        window.botIntegration.sendHabitNotification(data.habit_name, data.completed);
+                        break;
+                    case 'snack_selected':
+                    case 'custom_snack_added':
+                        window.botIntegration.sendSnackNotification(data.name, data.calories);
+                        break;
+                    case 'diary_entry_added':
+                        window.botIntegration.sendDiaryNotification(data.title);
+                        break;
+                    case 'bike_status_updated':
+                        window.botIntegration.sendBikeStatusNotification('Обновлено');
+                        break;
+                    case 'referral_reward_processed':
+                        window.botIntegration.sendReferralNotification(data.total_referrals);
+                        break;
+                    case 'premium_activated':
+                        window.botIntegration.sendPremiumNotification('Premium активирован!');
+                        break;
+                    case 'steps_converted':
+                        if (data.stars_earned > 0) {
+                            window.botIntegration.sendNotification(`🎉 Заработано ${data.stars_earned} Stars за шаги!`, data);
+                        }
+                        break;
+                    case 'km_converted':
+                        if (data.rubles_earned > 0) {
+                            window.botIntegration.sendNotification(`💰 Заработано ${data.rubles_earned}₽ за километры!`, data);
+                        }
+                        break;
+                    case 'app_entry':
+                        // Не отправляем уведомление при входе в приложение
+                        break;
+                    default:
+                        // Для других важных действий можно добавить общие уведомления
+                        break;
+                }
+            }
             
             // Отправка на сервер (если доступно)
             const telegramId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;

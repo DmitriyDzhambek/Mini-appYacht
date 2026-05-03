@@ -3,10 +3,17 @@ const TelegramBot = require('node-telegram-bot-api');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
+const fetch = require('node-fetch');
 
 // Конфигурация
 const BOT_TOKEN = process.env.BOT_TOKEN || 'YOUR_BOT_TOKEN';
 const PORT = process.env.PORT || 3000;
+
+// YooKassa конфигурация
+const YOOKASSA_SHOP_ID = process.env.YOOKASSA_SHOP_ID || 'YOUR_SHOP_ID';
+const YOOKASSA_SECRET_KEY = process.env.YOOKASSA_SECRET_KEY || 'YOUR_SECRET_KEY';
+const YOOKASSA_RETURN_URL = process.env.YOOKASSA_RETURN_URL || 'https://your-domain.com/payment/success';
 
 // Инициализация бота
 const bot = new TelegramBot(BOT_TOKEN, { polling: false });
@@ -49,6 +56,20 @@ db.serialize(() => {
         end_date TEXT,
         is_active BOOLEAN DEFAULT 1,
         telegram_payment_charge_id TEXT,
+        FOREIGN KEY (user_id) REFERENCES users (id)
+    )`);
+    
+    db.run(`CREATE TABLE IF NOT EXISTS yookassa_payments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        payment_id TEXT UNIQUE,
+        status TEXT,
+        amount REAL,
+        currency TEXT,
+        description TEXT,
+        confirmation_url TEXT,
+        created_at TEXT,
+        metadata TEXT,
         FOREIGN KEY (user_id) REFERENCES users (id)
     )`);
 });
@@ -118,6 +139,144 @@ app.post('/api/premium-payment', (req, res) => {
         
         res.json({ success: true, message: 'Premium activated' });
     });
+});
+
+// YooKassa создание платежа
+app.post('/api/yookassa/create-payment', async (req, res) => {
+    const { telegram_id, amount, description } = req.body;
+    
+    try {
+        // Генерируем ключ идемпотентности
+        const idempotenceKey = crypto.randomUUID();
+        
+        // Создаем платеж в YooKassa
+        const paymentData = {
+            amount: {
+                value: amount.toString(),
+                currency: "RUB"
+            },
+            capture: true,
+            confirmation: {
+                type: "redirect",
+                return_url: `${YOOKASSA_RETURN_URL}?telegram_id=${telegram_id}`
+            },
+            description: description || "VeloPath Premium подписка"
+        };
+        
+        const response = await fetch('https://api.yookassa.ru/v3/payments', {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Basic ' + Buffer.from(`${YOOKASSA_SHOP_ID}:${YOOKASSA_SECRET_KEY}`).toString('base64'),
+                'Idempotence-Key': idempotenceKey,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(paymentData)
+        });
+        
+        const payment = await response.json();
+        
+        if (response.ok) {
+            // Сохраняем информацию о платеже в базу
+            db.run(`
+                INSERT INTO yookassa_payments 
+                (user_id, payment_id, status, amount, currency, description, confirmation_url, created_at, metadata)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `, [telegram_id, payment.id, payment.status, payment.amount.value, payment.amount.currency, 
+                payment.description, payment.confirmation.confirmation_url, payment.created_at, 
+                JSON.stringify(payment.metadata)]);
+            
+            res.json({
+                success: true,
+                payment_id: payment.id,
+                status: payment.status,
+                confirmation_url: payment.confirmation.confirmation_url,
+                amount: payment.amount.value,
+                currency: payment.amount.currency
+            });
+        } else {
+            res.status(400).json({ 
+                success: false, 
+                error: payment.description || 'Payment creation failed' 
+            });
+        }
+    } catch (error) {
+        console.error('YooKassa payment creation error:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Internal server error' 
+        });
+    }
+});
+
+// YooKassa вебхук для обработки статусов платежей
+app.post('/webhook/yookassa', (req, res) => {
+    const event = req.body;
+    
+    console.log('YooKassa webhook:', event);
+    
+    if (event.event === 'payment.succeeded') {
+        const payment = event.object;
+        
+        // Обновляем статус платежа в базе
+        db.run(`
+            UPDATE yookassa_payments 
+            SET status = ? 
+            WHERE payment_id = ?
+        `, ['succeeded', payment.id]);
+        
+        // Активируем премиум для пользователя
+        db.get(`
+            SELECT user_id FROM yookassa_payments WHERE payment_id = ?
+        `, [payment.id], (err, row) => {
+            if (!err && row) {
+                db.run(`
+                    INSERT OR REPLACE INTO users 
+                    (telegram_id, is_premium, premium_start_date, premium_end_date)
+                    VALUES (?, 1, datetime('now'), datetime('now', '+1 month'))
+                `, [row.user_id]);
+                
+                // Добавляем запись о подписке
+                db.run(`
+                    INSERT INTO subscriptions 
+                    (user_id, subscription_type, amount, currency, start_date, end_date)
+                    VALUES (?, 'premium', ?, ?, datetime('now'), datetime('now', '+1 month'))
+                `, [row.user_id, payment.amount.value, payment.amount.currency]);
+            }
+        });
+    }
+    
+    res.sendStatus(200);
+});
+
+// Страница успешного платежа
+app.get('/payment/success', (req, res) => {
+    const telegram_id = req.query.telegram_id;
+    
+    if (telegram_id) {
+        res.send(`
+            <html>
+                <head>
+                    <title>Платеж успешен</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+                        .success { color: #28a745; font-size: 24px; margin-bottom: 20px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="success">✅ Платеж успешно обработан!</div>
+                    <p>Ваша премиум подписка активирована.</p>
+                    <p>Вернитесь в Telegram для продолжения.</p>
+                    <script>
+                        setTimeout(() => {
+                            window.close();
+                        }, 3000);
+                    </script>
+                </body>
+            </html>
+        `);
+    } else {
+        res.status(400).send('Ошибка: отсутствует telegram_id');
+    }
 });
 
 // Обработка платежей от Telegram

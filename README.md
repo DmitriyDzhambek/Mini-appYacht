@@ -107,22 +107,45 @@ Mini-appYacht/
 
 ## 💳 Платежная система
 
+### Двойная интеграция платежей
+- **Telegram Stars**: 99 Stars/месяц
+- **YooKassa**: 99 рублей/месяц (карта, СБП, YooPay)
+- **Выбор способа**: Пользователь выбирает при покупке
+
 ### Telegram Stars Integration
 - **Валюта**: XTR (Telegram Stars)
 - **Стоимость Premium**: 99 Stars/месяц
 - **Обработка**: Telegram Bot API
-- **Хранение**: SQLite3 база данных
+- **Преимущества**: Мгновенная оплата внутри Telegram
+
+### YooKassa Integration
+- **Валюта**: RUB (рубли)
+- **Стоимость Premium**: 99 рублей/месяц
+- **Способы оплаты**: Карта, СБП, YooPay, QIWI
+- **Обработка**: YooKassa API с вебхуками
+- **Комиссии**: 2.5-4.5% в зависимости от способа
 
 ### API эндпоинты
 - `GET /api/premium-users` - Список премиум пользователей
 - `GET /api/user-stats` - Статистика пользователей
-- `POST /api/premium-payment` - Обработка платежа
+- `POST /api/premium-payment` - Обработка платежа Telegram Stars
+- `POST /api/yookassa/create-payment` - Создание платежа YooKassa
 - `POST /webhook/telegram` - Вебхук Telegram
+- `POST /webhook/yookassa` - Вебхук YooKassa
+- `GET /payment/success` - Страница успешного платежа
 
 ### Админ панель
 - **URL**: `/admin`
 - **Функции**: Просмотр пользователей, статистика, управление подписками
 - **Обновление**: Автообновление каждые 30 секунд
+- **Отслеживание**: Оба способа оплаты в одной таблице
+
+### Настройка YooKassa
+1. Регистрация на https://yookassa.ru
+2. Получение Shop ID и Secret Key
+3. Настройка вебхуков
+4. Тестирование в песочнице
+*Подробности в файле `YOOKASSA_SETUP.md`*
 
 ### Рекомендуемые сервисы для управления пользователями
 1. **Supabase** - Бесплатная PostgreSQL база с API

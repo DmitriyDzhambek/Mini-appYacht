@@ -389,7 +389,7 @@
 
             <div class="section">
                 <h3>💎 Premium функции</h3>
-                <button class="btn" onclick="upgradeToPremium()">👑 Премиум (99₽/мес)</button>
+                <button class="btn" onclick="upgradeToPremium()">👑 Премиум (99₽/99⭐/мес)</button>
                 <button class="btn" onclick="showOffers()">📋 Выполнить задания</button>
                 <button class="btn" onclick="showAffiliates()">🛒 Партнерские скидки</button>
                 <button class="btn secondary" onclick="showReferral()">👥 Пригласить друга</button>
@@ -1005,6 +1005,58 @@
         }
 
         function upgradeToPremium() {
+            // Выбор способа оплаты
+            const paymentMethod = confirm('Выберите способ оплаты:\n\nОК - YooKassa (карта/СБП)\nОтмена - Telegram Stars');
+            
+            if (paymentMethod) {
+                // YooKassa оплата
+                upgradeToPremiumYooKassa();
+            } else {
+                // Telegram Stars оплата
+                upgradeToPremiumTelegramStars();
+            }
+        }
+        
+        function upgradeToPremiumYooKassa() {
+            const telegramId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id || 'demo_user';
+            const amount = 99.00; // 99 рублей
+            
+            fetch('https://your-payment-server.com/api/yookassa/create-payment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    telegram_id: telegramId,
+                    amount: amount,
+                    description: 'VeloPath Premium подписка - 1 месяц'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Открываем страницу оплаты YooKassa
+                    if (window.Telegram && window.Telegram.WebApp) {
+                        // В Telegram WebApp открываем через WebApp
+                        window.Telegram.WebApp.openLink(data.confirmation_url);
+                    } else {
+                        // В браузере открываем в новой вкладке
+                        window.open(data.confirmation_url, '_blank');
+                    }
+                } else {
+                    alert('Ошибка создания платежа: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('YooKassa payment error:', error);
+                // Fallback для тестирования
+                if (confirm('👑 Премиум доступ:\n\n• Без рекламы\n• Эксклюзивные маршруты\n• Продвинутая статистика\n• Приоритетная поддержка\n\n99₽/месяц\n\nТестовая покупка?')) {
+                    activatePremiumDemo('99 ₽');
+                }
+            });
+        }
+        
+        function upgradeToPremiumTelegramStars() {
             // Отправляем инвойс через Telegram WebApp
             if (window.Telegram && window.Telegram.WebApp) {
                 const invoiceData = {
@@ -1044,31 +1096,27 @@
                     console.error('Payment error:', error);
                     // Fallback для тестирования
                     if (confirm('👑 Премиум доступ:\n\n• Без рекламы\n• Эксклюзивные маршруты\n• Продвинутая статистика\n\n99 Stars/месяц\n\nТестовая покупка?')) {
-                        state.premium = true;
-                        state.premiumEndDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-                        state.transactions.unshift({
-                            type: 'premium',
-                            amount: '-99 ⭐',
-                            date: new Date().toLocaleDateString()
-                        });
-                        updateDisplay();
-                        alert('✅ Премиум активирован! Спасибо за поддержку!');
+                        activatePremiumDemo('99 ⭐');
                     }
                 });
             } else {
                 // Fallback для десктопа
                 if (confirm('👑 Премиум доступ:\n\n• Без рекламы\n• Эксклюзивные маршруты\n• Продвинутая статистика\n\n99 Stars/месяц\n\nТестовая покупка?')) {
-                    state.premium = true;
-                    state.premiumEndDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-                    state.transactions.unshift({
-                        type: 'premium',
-                        amount: '-99 ⭐',
-                        date: new Date().toLocaleDateString()
-                    });
-                    updateDisplay();
-                    alert('✅ Премиум активирован! Спасибо за поддержку!');
+                    activatePremiumDemo('99 ⭐');
                 }
             }
+        }
+        
+        function activatePremiumDemo(amount) {
+            state.premium = true;
+            state.premiumEndDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+            state.transactions.unshift({
+                type: 'premium',
+                amount: '-' + amount,
+                date: new Date().toLocaleDateString()
+            });
+            updateDisplay();
+            alert('✅ Премиум активирован! Спасибо за поддержку!');
         }
 
         function showReferral() {

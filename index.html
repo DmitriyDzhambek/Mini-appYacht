@@ -496,6 +496,7 @@
                         <button class="btn" onclick="addThought('Отношения')" style="width:100%;margin-top:8px;padding:8px;font-size:12px;">💭 Добавить мысль</button>
                     </div>
                 </div>
+                <button class="btn" onclick="showScreen('home')" style="width:100%;margin-top:20px;background:#28a745;">🏠 Вернуться на главное меню</button>
             </div>
             
             <div class="section">
@@ -507,13 +508,32 @@
             </div>
         </div>
 
+        <div id="snacks" class="screen">
+            <div class="section">
+                <h3>🥪 Перекусы с собой</h3>
+                <div id="snacksList"></div>
+                <button class="btn" onclick="addSnack()">+ Добавить перекус</button>
+            </div>
+            
+            <div class="section">
+                <h3>📸 Дневник с фото</h3>
+                <div id="diaryList"></div>
+                <div style="margin-top:15px;">
+                    <input type="text" id="diaryTitle" placeholder="Заголовок записи" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;margin-bottom:10px;">
+                    <textarea id="diaryText" placeholder="Текст записи..." style="width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;margin-bottom:10px;min-height:100px;resize:vertical;"></textarea>
+                    <input type="file" id="diaryPhoto" accept="image/*" capture="camera" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;margin-bottom:10px;">
+                    <button class="btn" onclick="addDiaryEntry()" style="width:100%;">📝 Добавить запись</button>
+                </div>
+            </div>
+            
+            <button class="btn" onclick="showScreen('home')" style="width:100%;margin-top:20px;background:#28a745;">🏠 Вернуться на главное меню</button>
+        </div>
+
         <div id="habits" class="screen">
             <div class="section">
                 <h3>🎯 Мои привычки</h3>
-                <div id="habitsList">
-                    <div class="empty-state">Добавьте свои привычки</div>
-                </div>
-                <button class="btn" onclick="addHabit()">➕ Добавить привычку</button>
+                <div id="habitsList"></div>
+                <button class="btn" onclick="addHabit()">+ Добавить привычку</button>
             </div>
             
             <div class="section">
@@ -579,6 +599,10 @@
                     <span>💳</span>
                     <p>Кошелек</p>
                 </button>
+                <button class="nav-btn" onclick="showScreen('snacks')">
+                    <span>🥪</span>
+                    <p>Перекусы</p>
+                </button>
                 <button class="nav-btn" onclick="showScreen('habits')">
                     <span>🎯</span>
                     <p>Привычки</p>
@@ -606,6 +630,8 @@
             },
             userThoughts: [],
             userAds: [],
+            snacks: [],
+            diary: [],
             transactions: [],
             badges: [],
             totalSteps: 0,
@@ -743,6 +769,8 @@
         window.addEventListener('load', () => {
             loadState();
             saveState();
+            updateSnacksDisplay();
+            updateDiaryDisplay();
             saveUserAction('app_entry', {
                 timestamp: new Date().toISOString(),
                 user_agent: navigator.userAgent
@@ -1547,6 +1575,7 @@
                         </ul>
                     </div>
                     
+                    <button class="btn" onclick="showScreen('home'); this.closest('div[style*=position]').remove();" style="width:100%;margin-bottom:10px;background:#28a745;">🏠 Вернуться на главное меню</button>
                     <button class="btn secondary" onclick="this.closest('div[style*=position]').remove()" style="width:100%;">
                         Закрыть
                     </button>
@@ -1597,6 +1626,143 @@
             sendBotNotification(`🤝 Пользователь заинтересован партнерством в категории: ${categoryNames[category]}`);
         }
 
+        function addSnack() {
+            const name = prompt('Название перекуса:');
+            const calories = prompt('Калорийность:');
+            const description = prompt('Описание:');
+            
+            if (name && calories && description) {
+                const snack = {
+                    id: Date.now(),
+                    name: name.trim(),
+                    calories: parseInt(calories),
+                    description: description.trim(),
+                    date: new Date().toLocaleDateString()
+                };
+                
+                state.snacks.push(snack);
+                saveState();
+                updateSnacksDisplay();
+                saveUserAction('snack_added', { 
+                    snack_id: snack.id,
+                    name: name,
+                    calories: calories
+                });
+            }
+        }
+        
+        function updateSnacksDisplay() {
+            const snacksList = document.getElementById('snacksList');
+            if (state.snacks.length === 0) {
+                snacksList.innerHTML = '<div class="empty-state">Нет перекусов</div>';
+            } else {
+                snacksList.innerHTML = state.snacks.map(snack => `
+                    <div style="background:rgba(255,255,255,0.9);border-radius:8px;padding:12px;margin-bottom:10px;border:1px solid rgba(0,0,0,0.1);">
+                        <h4 style="margin:0 0 8px 0;color:#333;">${snack.name}</h4>
+                        <p style="margin:0 0 8px 0;font-size:14px;color:#666;">${snack.description}</p>
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <span style="font-size:12px;color:#007bff;">🔥 ${snack.calories} ккал</span>
+                            <button onclick="deleteSnack(${snack.id})" style="background:#ff4444;color:white;border:none;padding:5px 10px;border-radius:5px;cursor:pointer;font-size:12px;">🗑️</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            saveState();
+            saveUserAction('snacks_display_updated', { 
+                snacks_count: state.snacks.length
+            });
+        }
+        
+        function deleteSnack(id) {
+            if (confirm('Удалить перекус?')) {
+                state.snacks = state.snacks.filter(s => s.id !== id);
+                saveState();
+                updateSnacksDisplay();
+                saveUserAction('snack_deleted', { snack_id: id });
+            }
+        }
+        
+        function addDiaryEntry() {
+            const title = document.getElementById('diaryTitle').value.trim();
+            const text = document.getElementById('diaryText').value.trim();
+            const photoInput = document.getElementById('diaryPhoto');
+            
+            if (!title || !text) {
+                alert('Заполните заголовок и текст записи');
+                return;
+            }
+            
+            const entry = {
+                id: Date.now(),
+                title: title,
+                text: text,
+                date: new Date().toLocaleDateString(),
+                timestamp: new Date().toISOString()
+            };
+            
+            // Обработка фото
+            if (photoInput.files && photoInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    entry.photo = e.target.result;
+                    saveDiaryEntry(entry);
+                };
+                reader.readAsDataURL(photoInput.files[0]);
+            } else {
+                saveDiaryEntry(entry);
+            }
+        }
+        
+        function saveDiaryEntry(entry) {
+            state.diary.unshift(entry);
+            saveState();
+            updateDiaryDisplay();
+            saveUserAction('diary_entry_added', { 
+                entry_id: entry.id,
+                title: entry.title,
+                has_photo: !!entry.photo
+            });
+            
+            // Очистка формы
+            document.getElementById('diaryTitle').value = '';
+            document.getElementById('diaryText').value = '';
+            document.getElementById('diaryPhoto').value = '';
+            
+            alert('📝 Запись в дневник добавлена!');
+        }
+        
+        function updateDiaryDisplay() {
+            const diaryList = document.getElementById('diaryList');
+            if (state.diary.length === 0) {
+                diaryList.innerHTML = '<div class="empty-state">Нет записей в дневнике</div>';
+            } else {
+                diaryList.innerHTML = state.diary.map(entry => `
+                    <div style="background:rgba(255,255,255,0.9);border-radius:8px;padding:12px;margin-bottom:10px;border:1px solid rgba(0,0,0,0.1);">
+                        <h4 style="margin:0 0 8px 0;color:#333;">${entry.title}</h4>
+                        <p style="margin:0 0 8px 0;font-size:14px;color:#666;">${entry.text}</p>
+                        ${entry.photo ? `<img src="${entry.photo}" style="width:100%;max-width:300px;border-radius:5px;margin-bottom:8px;">` : ''}
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <span style="font-size:12px;color:#666;">📅 ${entry.date}</span>
+                            <button onclick="deleteDiaryEntry(${entry.id})" style="background:#ff4444;color:white;border:none;padding:5px 10px;border-radius:5px;cursor:pointer;font-size:12px;">🗑️</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            saveState();
+            saveUserAction('diary_display_updated', { 
+                entries_count: state.diary.length
+            });
+        }
+        
+        function deleteDiaryEntry(id) {
+            if (confirm('Удалить запись из дневника?')) {
+                state.diary = state.diary.filter(e => e.id !== id);
+                saveState();
+                updateDiaryDisplay();
+                saveUserAction('diary_entry_deleted', { entry_id: id });
+            }
+        }
+        
         function upgradeToPremium() {
             showPaymentModal();
         }

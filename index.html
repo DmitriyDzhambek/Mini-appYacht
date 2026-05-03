@@ -428,6 +428,71 @@
             </div>
         </div>
 
+        <div id="bike" class="screen">
+            <div class="section">
+                <h3>🚴 Состояние велосипеда</h3>
+                <div id="bikeStatus">
+                    <div style="background:rgba(255,255,255,0.9);border-radius:8px;padding:15px;margin-bottom:15px;border:1px solid rgba(0,0,0,0.1);">
+                        <h4 style="margin:0 0 10px 0;color:#333;">🔧 Техническое состояние</h4>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                            <div>
+                                <span style="font-size:12px;color:#666;">Тормоза:</span>
+                                <div style="font-weight:bold;color:#28a745;">✅ Исправны</div>
+                            </div>
+                            <div>
+                                <span style="font-size:12px;color:#666;">Шины:</span>
+                                <div style="font-weight:bold;color:#28a745;">✅ В норме</div>
+                            </div>
+                            <div>
+                                <span style="font-size:12px;color:#666;">Цепь:</span>
+                                <div style="font-weight:bold;color:#ffc107;">⚠️ Требует смазки</div>
+                            </div>
+                            <div>
+                                <span style="font-size:12px;color:#666;">Свет:</span>
+                                <div style="font-weight:bold;color:#28a745;">✅ Работает</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="background:rgba(255,255,255,0.9);border-radius:8px;padding:15px;margin-bottom:15px;border:1px solid rgba(0,0,0,0.1);">
+                        <h4 style="margin:0 0 10px 0;color:#333;">📊 Статистика</h4>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                            <div>
+                                <span style="font-size:12px;color:#666;">Общий пробег:</span>
+                                <div style="font-weight:bold;color:#007bff;">${state.totalKm || 0} км</div>
+                            </div>
+                            <div>
+                                <span style="font-size:12px;color:#666;">Последний поезд:</span>
+                                <div style="font-weight:bold;color:#007bff;">Сегодня</div>
+                            </div>
+                            <div>
+                                <span style="font-size:12px;color:#666;">Последнее ТО:</span>
+                                <div style="font-weight:bold;color:#dc3545;">Требуется</div>
+                            </div>
+                            <div>
+                                <span style="font-size:12px;color:#666;">Возраст велосипеда:</span>
+                                <div style="font-weight:bold;color:#007bff;">2 года</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="background:rgba(255,255,255,0.9);border-radius:8px;padding:15px;margin-bottom:15px;border:1px solid rgba(0,0,0,0.1);">
+                        <h4 style="margin:0 0 10px 0;color:#333;">🔔 Напоминания</h4>
+                        <div style="font-size:14px;color:#666;">
+                            <div style="margin-bottom:8px;">⚠️ Смазать цепь через 50 км</div>
+                            <div style="margin-bottom:8px;">🔧 Заменить тормозные колодки через 200 км</div>
+                            <div style="margin-bottom:8px;">🛞 Проверить давление в шинах</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <button class="btn" onclick="updateBikeStatus()" style="width:100%;margin-bottom:10px;">🔧 Обновить состояние</button>
+                <button class="btn" onclick="addBikeNote()" style="width:100%;margin-bottom:10px;">📝 Добавить заметку</button>
+            </div>
+            
+            <button class="btn" onclick="showScreen('home')" style="width:100%;margin-top:20px;background:#28a745;">🏠 Вернуться на главное меню</button>
+        </div>
+
         <div id="wallet" class="screen">
             <div class="section">
                 <h3>💰 Заработать награды</h3>
@@ -512,7 +577,7 @@
             <div class="section">
                 <h3>🥪 Меню перекусов</h3>
                 <div id="snacksList"></div>
-                <button class="btn" onclick="showSnackMenu()">🍽️ Выбрать из меню</button>
+                <button class="btn" onclick="showSnackMenu()">🍽️ Меню перекусов</button>
                 <button class="btn" onclick="addCustomSnack()" style="margin-top:10px;">➕ Добавить свое блюдо</button>
             </div>
             
@@ -607,6 +672,10 @@
                     <span>📍</span>
                     <p>Трекер</p>
                 </button>
+                <button class="nav-btn" onclick="showScreen('bike')">
+                    <span>🚴</span>
+                    <p>Велосипед</p>
+                </button>
                 <button class="nav-btn" onclick="showScreen('wallet')">
                     <span>💳</span>
                     <p>Кошелек</p>
@@ -644,6 +713,15 @@
             userAds: [],
             snacks: [],
             diary: [],
+            bikeStatus: {
+                brakes: 'good',
+                tires: 'good',
+                chain: 'needs_lubrication',
+                lights: 'good',
+                lastMaintenance: null,
+                bikeAge: 2,
+                notes: []
+            },
             transactions: [],
             badges: [],
             totalSteps: 0,
@@ -783,6 +861,7 @@
             saveState();
             updateSnacksDisplay();
             updateDiaryDisplay();
+            updateBikeDisplay();
             saveUserAction('app_entry', {
                 timestamp: new Date().toISOString(),
                 user_agent: navigator.userAgent
@@ -1515,80 +1594,72 @@
             `;
             
             modal.innerHTML = `
-                <div style="background:white;border-radius:12px;padding:20px;margin:20px;max-width:450px;">
-                    <h3 class="animated-title" style="margin:0 0 20px 0;text-align:center;font-size:24px;">
-                        🌍 Партнерские возможности
+                <div style="background:white;border-radius:12px;padding:15px;margin:20px;max-width:380px;">
+                    <h3 class="animated-title" style="margin:0 0 15px 0;text-align:center;font-size:20px;">
+                        🌍 Партнерство
                     </h3>
                     
-                    <div style="text-align:center;margin-bottom:20px;">
-                        <p class="rainbow-text" style="font-size:16px;margin:0 0 10px 0;">
-                            Если Вы управляющий в сфере путешествий и здорового образа жизни
+                    <div style="text-align:center;margin-bottom:15px;">
+                        <p class="rainbow-text" style="font-size:14px;margin:0 0 5px 0;">
+                            Рекламируйте ваш бизнес
                         </p>
-                        <p style="font-size:14px;color:#666;margin:0;">
-                            можете рекламировать свой сайт и социальные сети
+                        <p style="font-size:12px;color:#666;margin:0;">
+                            Путешествия и ЗОЖ
                         </p>
                     </div>
                     
-                    <div class="partner-card" style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);border-radius:12px;padding:20px;margin-bottom:15px;color:white;">
-                        <h4 style="margin:0 0 10px 0;display:flex;align-items:center;">
-                            ✈️ <span style="margin-left:8px;">Туристические агентства</span>
-                        </h4>
-                        <p style="margin:0 0 15px 0;font-size:14px;opacity:0.9;">
-                            Продвигайте туры, отели, авиабилеты для активных путешественников
+                    <div class="partner-card" style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);border-radius:8px;padding:12px;margin-bottom:10px;color:white;">
+                        <h4 style="margin:0 0 5px 0;font-size:14px;">✈️ Туризм</h4>
+                        <p style="margin:0 0 8px 0;font-size:11px;opacity:0.9;">
+                            Туры, отели, авиабилеты
                         </p>
-                        <button class="btn" onclick="contactPartner('travel')" style="background:white;color:#667eea;width:100%;font-weight:bold;">
-                            Начать сотрудничество
+                        <button class="btn" onclick="contactPartner('travel')" style="background:white;color:#667eea;width:100%;font-size:12px;padding:6px;">
+                            Сотрудничество
                         </button>
                     </div>
                     
-                    <div class="partner-card" style="background:linear-gradient(135deg, #f093fb 0%, #f5576c 100%);border-radius:12px;padding:20px;margin-bottom:15px;color:white;">
-                        <h4 style="margin:0 0 10px 0;display:flex;align-items:center;">
-                            🏃‍♂️ <span style="margin-left:8px;">Фитнес и спорт</span>
-                        </h4>
-                        <p style="margin:0 0 15px 0;font-size:14px;opacity:0.9;">
-                            Рекламируйте спортзалы, оборудование, фитнес-программы
+                    <div class="partner-card" style="background:linear-gradient(135deg, #f093fb 0%, #f5576c 100%);border-radius:8px;padding:12px;margin-bottom:10px;color:white;">
+                        <h4 style="margin:0 0 5px 0;font-size:14px;">🏃‍♂️ Фитнес</h4>
+                        <p style="margin:0 0 8px 0;font-size:11px;opacity:0.9;">
+                            Спортзалы, оборудование
                         </p>
-                        <button class="btn" onclick="contactPartner('fitness')" style="background:white;color:#f093fb;width:100%;font-weight:bold;">
-                            Начать сотрудничество
+                        <button class="btn" onclick="contactPartner('fitness')" style="background:white;color:#f093fb;width:100%;font-size:12px;padding:6px;">
+                            Сотрудничество
                         </button>
                     </div>
                     
-                    <div class="partner-card" style="background:linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);border-radius:12px;padding:20px;margin-bottom:15px;color:white;">
-                        <h4 style="margin:0 0 10px 0;display:flex;align-items:center;">
-                            🥗 <span style="margin-left:8px;">Здоровое питание</span>
-                        </h4>
-                        <p style="margin:0 0 15px 0;font-size:14px;opacity:0.9;">
-                            Продвигайте полезные продукты, диетические программы, доставку
+                    <div class="partner-card" style="background:linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);border-radius:8px;padding:12px;margin-bottom:10px;color:white;">
+                        <h4 style="margin:0 0 5px 0;font-size:14px;">🥗 Питание</h4>
+                        <p style="margin:0 0 8px 0;font-size:11px;opacity:0.9;">
+                            Продукты, диеты, доставка
                         </p>
-                        <button class="btn" onclick="contactPartner('health')" style="background:white;color:#4facfe;width:100%;font-weight:bold;">
-                            Начать сотрудничество
+                        <button class="btn" onclick="contactPartner('health')" style="background:white;color:#4facfe;width:100%;font-size:12px;padding:6px;">
+                            Сотрудничество
                         </button>
                     </div>
                     
-                    <div class="partner-card" style="background:linear-gradient(135deg, #fa709a 0%, #fee140 100%);border-radius:12px;padding:20px;margin-bottom:15px;color:white;">
-                        <h4 style="margin:0 0 10px 0;display:flex;align-items:center;">
-                            🧘 <span style="margin-left:8px;">Wellness и SPA</span>
-                        </h4>
-                        <p style="margin:0 0 15px 0;font-size:14px;opacity:0.9;">
-                            Рекламируйте SPA-салоны, йога-студии, медитационные курсы
+                    <div class="partner-card" style="background:linear-gradient(135deg, #fa709a 0%, #fee140 100%);border-radius:8px;padding:12px;margin-bottom:10px;color:white;">
+                        <h4 style="margin:0 0 5px 0;font-size:14px;">🧘 Wellness</h4>
+                        <p style="margin:0 0 8px 0;font-size:11px;opacity:0.9;">
+                            SPA, йога, медитация
                         </p>
-                        <button class="btn" onclick="contactPartner('wellness')" style="background:white;color:#fa709a;width:100%;font-weight:bold;">
-                            Начать сотрудничество
+                        <button class="btn" onclick="contactPartner('wellness')" style="background:white;color:#fa709a;width:100%;font-size:12px;padding:6px;">
+                            Сотрудничество
                         </button>
                     </div>
                     
-                    <div style="background:#f8f9fa;border-radius:8px;padding:15px;margin-bottom:15px;">
-                        <h4 style="margin:0 0 10px 0;color:#333;">📊 Наши преимущества:</h4>
-                        <ul style="margin:0;padding-left:20px;font-size:14px;color:#666;">
-                            <li>Аудитория активных и мотивированных пользователей</li>
-                            <li>Целевая реклама для сферы путешествий и ЗОЖ</li>
-                            <li>Гибкие условия сотрудничества</li>
-                            <li>Детальная статистика показов и переходов</li>
+                    <div style="background:#f8f9fa;border-radius:6px;padding:10px;margin-bottom:10px;">
+                        <h4 style="margin:0 0 5px 0;color:#333;font-size:12px;">📊 Преимущества:</h4>
+                        <ul style="margin:0;padding-left:15px;font-size:11px;color:#666;">
+                            <li>Активная аудитория</li>
+                            <li>Целевая реклама</li>
+                            <li>Гибкие условия</li>
+                            <li>Детальная статистика</li>
                         </ul>
                     </div>
                     
-                    <button class="btn" onclick="showScreen('home'); this.closest('div[style*=position]').remove();" style="width:100%;margin-bottom:10px;background:#28a745;">🏠 Вернуться на главное меню</button>
-                    <button class="btn secondary" onclick="this.closest('div[style*=position]').remove()" style="width:100%;">
+                    <button class="btn" onclick="showScreen('home'); this.closest('div[style*=position]').remove();" style="width:100%;margin-bottom:5px;background:#28a745;font-size:12px;padding:8px;">🏠 На главную</button>
+                    <button class="btn secondary" onclick="this.closest('div[style*=position]').remove()" style="width:100%;font-size:12px;padding:8px;">
                         Закрыть
                     </button>
                 </div>
@@ -1874,6 +1945,198 @@
             document.getElementById('diaryPhoto').value = '';
             document.getElementById('photoPreview').style.display = 'none';
             document.getElementById('previewImage').src = '';
+        }
+        
+        function updateBikeStatus() {
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position:fixed;top:0;left:0;width:100%;height:100%;
+                background:rgba(0,0,0,0.8);z-index:1000;
+                display:flex;align-items:center;justify-content:center;
+            `;
+            
+            modal.innerHTML = `
+                <div style="background:white;border-radius:12px;padding:20px;margin:20px;max-width:400px;">
+                    <h3 style="margin:0 0 15px 0;color:#333;">🔧 Обновить состояние</h3>
+                    <div style="margin-bottom:15px;">
+                        <label style="display:block;margin-bottom:5px;font-size:14px;color:#666;">Тормоза:</label>
+                        <select id="brakesStatus" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:5px;">
+                            <option value="good" ${state.bikeStatus.brakes === 'good' ? 'selected' : ''}>✅ Исправны</option>
+                            <option value="needs_repair" ${state.bikeStatus.brakes === 'needs_repair' ? 'selected' : ''}>⚠️ Требуют ремонта</option>
+                            <option value="broken" ${state.bikeStatus.brakes === 'broken' ? 'selected' : ''}>❌ Сломаны</option>
+                        </select>
+                    </div>
+                    <div style="margin-bottom:15px;">
+                        <label style="display:block;margin-bottom:5px;font-size:14px;color:#666;">Шины:</label>
+                        <select id="tiresStatus" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:5px;">
+                            <option value="good" ${state.bikeStatus.tires === 'good' ? 'selected' : ''}>✅ В норме</option>
+                            <option value="needs_air" ${state.bikeStatus.tires === 'needs_air' ? 'selected' : ''}>⚠️ Требуют подкачки</option>
+                            <option value="worn" ${state.bikeStatus.tires === 'worn' ? 'selected' : ''}>❌ Изношены</option>
+                        </select>
+                    </div>
+                    <div style="margin-bottom:15px;">
+                        <label style="display:block;margin-bottom:5px;font-size:14px;color:#666;">Цепь:</label>
+                        <select id="chainStatus" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:5px;">
+                            <option value="good" ${state.bikeStatus.chain === 'good' ? 'selected' : ''}>✅ В порядке</option>
+                            <option value="needs_lubrication" ${state.bikeStatus.chain === 'needs_lubrication' ? 'selected' : ''}>⚠️ Требует смазки</option>
+                            <option value="needs_replacement" ${state.bikeStatus.chain === 'needs_replacement' ? 'selected' : ''}>❌ Требует замены</option>
+                        </select>
+                    </div>
+                    <div style="margin-bottom:15px;">
+                        <label style="display:block;margin-bottom:5px;font-size:14px;color:#666;">Свет:</label>
+                        <select id="lightsStatus" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:5px;">
+                            <option value="good" ${state.bikeStatus.lights === 'good' ? 'selected' : ''}>✅ Работает</option>
+                            <option value="needs_bulbs" ${state.bikeStatus.lights === 'needs_bulbs' ? 'selected' : ''}>⚠️ Требует замены лампочек</option>
+                            <option value="broken" ${state.bikeStatus.lights === 'broken' ? 'selected' : ''}>❌ Не работает</option>
+                        </select>
+                    </div>
+                    <button class="btn" onclick="saveBikeStatus()" style="width:100%;">💾 Сохранить</button>
+                    <button class="btn secondary" onclick="this.closest('div[style*=position]').remove()" style="width:100%;margin-top:10px;">Отмена</button>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            modal.onclick = (e) => {
+                if (e.target === modal) modal.remove();
+            };
+        }
+        
+        function saveBikeStatus() {
+            state.bikeStatus.brakes = document.getElementById('brakesStatus').value;
+            state.bikeStatus.tires = document.getElementById('tiresStatus').value;
+            state.bikeStatus.chain = document.getElementById('chainStatus').value;
+            state.bikeStatus.lights = document.getElementById('lightsStatus').value;
+            state.bikeStatus.lastMaintenance = new Date().toISOString();
+            
+            saveState();
+            updateBikeDisplay();
+            saveUserAction('bike_status_updated', {
+                brakes: state.bikeStatus.brakes,
+                tires: state.bikeStatus.tires,
+                chain: state.bikeStatus.chain,
+                lights: state.bikeStatus.lights
+            });
+            
+            document.querySelector('div[style*="position:fixed"]').remove();
+            alert('✅ Состояние велосипеда обновлено!');
+        }
+        
+        function addBikeNote() {
+            const note = prompt('Добавить заметку о велосипеде:');
+            if (note && note.trim()) {
+                state.bikeStatus.notes.push({
+                    id: Date.now(),
+                    text: note.trim(),
+                    date: new Date().toLocaleDateString(),
+                    timestamp: new Date().toISOString()
+                });
+                
+                saveState();
+                updateBikeDisplay();
+                saveUserAction('bike_note_added', { 
+                    note_id: state.bikeStatus.notes[state.bikeStatus.notes.length - 1].id,
+                    text: note.trim()
+                });
+                
+                alert('✅ Заметка добавлена!');
+            }
+        }
+        
+        function updateBikeDisplay() {
+            const bikeStatusDiv = document.getElementById('bikeStatus');
+            if (!bikeStatusDiv) return;
+            
+            const statusColors = {
+                good: '#28a745',
+                needs_air: '#ffc107',
+                needs_lubrication: '#ffc107',
+                needs_bulbs: '#ffc107',
+                needs_repair: '#dc3545',
+                worn: '#dc3545',
+                needs_replacement: '#dc3545',
+                broken: '#dc3545'
+            };
+            
+            const statusTexts = {
+                good: '✅ Исправны',
+                needs_air: '⚠️ Требуют подкачки',
+                needs_lubrication: '⚠️ Требует смазки',
+                needs_bulbs: '⚠️ Требует замены лампочек',
+                needs_repair: '⚠️ Требуют ремонта',
+                worn: '❌ Изношены',
+                needs_replacement: '❌ Требует замены',
+                broken: '❌ Сломаны'
+            };
+            
+            bikeStatusDiv.innerHTML = `
+                <div style="background:rgba(255,255,255,0.9);border-radius:8px;padding:15px;margin-bottom:15px;border:1px solid rgba(0,0,0,0.1);">
+                    <h4 style="margin:0 0 10px 0;color:#333;">🔧 Техническое состояние</h4>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                        <div>
+                            <span style="font-size:12px;color:#666;">Тормоза:</span>
+                            <div style="font-weight:bold;color:${statusColors[state.bikeStatus.brakes]};">${statusTexts[state.bikeStatus.brakes]}</div>
+                        </div>
+                        <div>
+                            <span style="font-size:12px;color:#666;">Шины:</span>
+                            <div style="font-weight:bold;color:${statusColors[state.bikeStatus.tires]};">${statusTexts[state.bikeStatus.tires]}</div>
+                        </div>
+                        <div>
+                            <span style="font-size:12px;color:#666;">Цепь:</span>
+                            <div style="font-weight:bold;color:${statusColors[state.bikeStatus.chain]};">${statusTexts[state.bikeStatus.chain]}</div>
+                        </div>
+                        <div>
+                            <span style="font-size:12px;color:#666;">Свет:</span>
+                            <div style="font-weight:bold;color:${statusColors[state.bikeStatus.lights]};">${statusTexts[state.bikeStatus.lights]}</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="background:rgba(255,255,255,0.9);border-radius:8px;padding:15px;margin-bottom:15px;border:1px solid rgba(0,0,0,0.1);">
+                    <h4 style="margin:0 0 10px 0;color:#333;">📊 Статистика</h4>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                        <div>
+                            <span style="font-size:12px;color:#666;">Общий пробег:</span>
+                            <div style="font-weight:bold;color:#007bff;">${state.totalKm || 0} км</div>
+                        </div>
+                        <div>
+                            <span style="font-size:12px;color:#666;">Последний поезд:</span>
+                            <div style="font-weight:bold;color:#007bff;">Сегодня</div>
+                        </div>
+                        <div>
+                            <span style="font-size:12px;color:#666;">Последнее ТО:</span>
+                            <div style="font-weight:bold;color:${state.bikeStatus.lastMaintenance ? '#28a745' : '#dc3545'};">
+                                ${state.bikeStatus.lastMaintenance ? new Date(state.bikeStatus.lastMaintenance).toLocaleDateString() : 'Требуется'}
+                            </div>
+                        </div>
+                        <div>
+                            <span style="font-size:12px;color:#666;">Возраст велосипеда:</span>
+                            <div style="font-weight:bold;color:#007bff;">${state.bikeStatus.bikeAge} года</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="background:rgba(255,255,255,0.9);border-radius:8px;padding:15px;margin-bottom:15px;border:1px solid rgba(0,0,0,0.1);">
+                    <h4 style="margin:0 0 10px 0;color:#333;">🔔 Напоминания</h4>
+                    <div style="font-size:14px;color:#666;">
+                        ${state.bikeStatus.chain === 'needs_lubrication' ? '<div style="margin-bottom:8px;">⚠️ Смазать цепь через 50 км</div>' : ''}
+                        ${state.bikeStatus.brakes === 'needs_repair' ? '<div style="margin-bottom:8px;">🔧 Заменить тормозные колодки через 200 км</div>' : ''}
+                        ${state.bikeStatus.tires === 'needs_air' ? '<div style="margin-bottom:8px;">🛞 Проверить давление в шинах</div>' : ''}
+                        ${state.bikeStatus.notes.length === 0 ? '<div style="color:#999;">Нет активных напоминаний</div>' : ''}
+                    </div>
+                </div>
+                
+                ${state.bikeStatus.notes.length > 0 ? `
+                    <div style="background:rgba(255,255,255,0.9);border-radius:8px;padding:15px;margin-bottom:15px;border:1px solid rgba(0,0,0,0.1);">
+                        <h4 style="margin:0 0 10px 0;color:#333;">📝 Заметки</h4>
+                        ${state.bikeStatus.notes.map(note => `
+                            <div style="background:#f8f9fa;border-radius:5px;padding:8px;margin-bottom:8px;">
+                                <div style="font-size:12px;color:#333;">${note.text}</div>
+                                <div style="font-size:10px;color:#666;margin-top:4px;">📅 ${note.date}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : ''}
+            `;
         }
         
         function upgradeToPremium() {

@@ -510,9 +510,10 @@
 
         <div id="snacks" class="screen">
             <div class="section">
-                <h3>🥪 Перекусы с собой</h3>
+                <h3>🥪 Меню перекусов</h3>
                 <div id="snacksList"></div>
-                <button class="btn" onclick="addSnack()">+ Добавить перекус</button>
+                <button class="btn" onclick="showSnackMenu()">🍽️ Выбрать из меню</button>
+                <button class="btn" onclick="addCustomSnack()" style="margin-top:10px;">➕ Добавить свое блюдо</button>
             </div>
             
             <div class="section">
@@ -521,7 +522,18 @@
                 <div style="margin-top:15px;">
                     <input type="text" id="diaryTitle" placeholder="Заголовок записи" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;margin-bottom:10px;">
                     <textarea id="diaryText" placeholder="Текст записи..." style="width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;margin-bottom:10px;min-height:100px;resize:vertical;"></textarea>
-                    <input type="file" id="diaryPhoto" accept="image/*" capture="camera" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;margin-bottom:10px;">
+                    <div style="position:relative;margin-bottom:10px;">
+                    <input type="file" id="diaryPhoto" accept="image/*" capture="environment" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;display:none;" onchange="previewPhoto(event)">
+                    <button type="button" onclick="document.getElementById('diaryPhoto').click()" style="width:100%;padding:10px;background:#007bff;color:white;border:none;border-radius:5px;cursor:pointer;margin-bottom:5px;">
+                        📷 Сделать фото или выбрать из галереи
+                    </button>
+                    <div id="photoPreview" style="display:none;margin-top:10px;">
+                        <img id="previewImage" style="width:100%;max-width:300px;border-radius:5px;">
+                        <button type="button" onclick="clearPhoto()" style="width:100%;padding:5px;background:#dc3545;color:white;border:none;border-radius:5px;cursor:pointer;margin-top:5px;">
+                            ❌ Удалить фото
+                        </button>
+                    </div>
+                </div>
                     <button class="btn" onclick="addDiaryEntry()" style="width:100%;">📝 Добавить запись</button>
                 </div>
             </div>
@@ -1626,8 +1638,79 @@
             sendBotNotification(`🤝 Пользователь заинтересован партнерством в категории: ${categoryNames[category]}`);
         }
 
-        function addSnack() {
-            const name = prompt('Название перекуса:');
+        function showSnackMenu() {
+            const menuItems = [
+                {name: 'Яблоко', calories: 52, description: 'Свежее сочное яблоко'},
+                {name: 'Банан', calories: 89, description: 'Спелый банан'},
+                {name: 'Морковь', calories: 41, description: 'Свежая морковь'},
+                {name: 'Орехи', calories: 607, description: 'Смесь орехов (30г)'},
+                {name: 'Йогурт', calories: 59, description: 'Натуральный йогурт'},
+                {name: 'Хлебцы', calories: 275, description: 'Цельнозерновые хлебцы (2 шт)'},
+                {name: 'Творог', calories: 71, description: 'Творог 2% (100г)'},
+                {name: 'Яйцо', calories: 155, description: 'Вареное яйцо (2 шт)'},
+                {name: 'Сыр', calories: 113, description: 'Нежирный сыр (30г)'},
+                {name: 'Овощи', calories: 35, description: 'Салат из свежих овощей'}
+            ];
+            
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position:fixed;top:0;left:0;width:100%;height:100%;
+                background:rgba(0,0,0,0.8);z-index:1000;
+                display:flex;align-items:center;justify-content:center;
+            `;
+            
+            modal.innerHTML = `
+                <div style="background:white;border-radius:12px;padding:20px;margin:20px;max-width:400px;max-height:400px;overflow-y:auto;">
+                    <h3 style="margin:0 0 15px 0;color:#333;">🍽️ Меню перекусов</h3>
+                    ${menuItems.map((item, index) => `
+                        <div style="background:#f8f9fa;border-radius:8px;padding:12px;margin-bottom:10px;cursor:pointer;border:1px solid #ddd;" onclick="selectSnack(${index})">
+                            <h4 style="margin:0 0 5px 0;color:#333;">${item.name}</h4>
+                            <p style="margin:0 0 5px 0;font-size:12px;color:#666;">${item.description}</p>
+                            <span style="font-size:12px;color:#007bff;font-weight:bold;">🔥 ${item.calories} ккал</span>
+                        </div>
+                    `).join('')}
+                    <button class="btn secondary" onclick="this.closest('div[style*=position]').remove()" style="width:100%;margin-top:15px;">Закрыть</button>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            modal.onclick = (e) => {
+                if (e.target === modal) modal.remove();
+            };
+            
+            // Сохраняем меню для выбора
+            window.currentSnackMenu = menuItems;
+        }
+        
+        function selectSnack(index) {
+            const item = window.currentSnackMenu[index];
+            const snack = {
+                id: Date.now(),
+                name: item.name,
+                calories: item.calories,
+                description: item.description,
+                date: new Date().toLocaleDateString(),
+                fromMenu: true
+            };
+            
+            state.snacks.push(snack);
+            saveState();
+            updateSnacksDisplay();
+            saveUserAction('snack_selected', { 
+                snack_id: snack.id,
+                name: item.name,
+                calories: item.calories,
+                from_menu: true
+            });
+            
+            // Закрываем модальное окно
+            document.querySelector('div[style*="position:fixed"]').remove();
+            
+            alert(`✅ Добавлен перекус: ${item.name} (${item.calories} ккал)`);
+        }
+        
+        function addCustomSnack() {
+            const name = prompt('Название блюда:');
             const calories = prompt('Калорийность:');
             const description = prompt('Описание:');
             
@@ -1637,17 +1720,21 @@
                     name: name.trim(),
                     calories: parseInt(calories),
                     description: description.trim(),
-                    date: new Date().toLocaleDateString()
+                    date: new Date().toLocaleDateString(),
+                    fromMenu: false
                 };
                 
                 state.snacks.push(snack);
                 saveState();
                 updateSnacksDisplay();
-                saveUserAction('snack_added', { 
+                saveUserAction('custom_snack_added', { 
                     snack_id: snack.id,
                     name: name,
-                    calories: calories
+                    calories: calories,
+                    from_menu: false
                 });
+                
+                alert(`✅ Добавлено блюдо: ${name} (${calories} ккал)`);
             }
         }
         
@@ -1707,8 +1794,13 @@
                     entry.photo = e.target.result;
                     saveDiaryEntry(entry);
                 };
+                reader.onerror = function() {
+                    alert('Ошибка загрузки фото. Попробуйте еще раз.');
+                    saveDiaryEntry(entry); // Сохраняем без фото
+                };
                 reader.readAsDataURL(photoInput.files[0]);
             } else {
+                // Если фото не выбрано, сохраняем без фото
                 saveDiaryEntry(entry);
             }
         }
@@ -1727,6 +1819,7 @@
             document.getElementById('diaryTitle').value = '';
             document.getElementById('diaryText').value = '';
             document.getElementById('diaryPhoto').value = '';
+            clearPhoto(); // Очищаем превью фото
             
             alert('📝 Запись в дневник добавлена!');
         }
@@ -1761,6 +1854,26 @@
                 updateDiaryDisplay();
                 saveUserAction('diary_entry_deleted', { entry_id: id });
             }
+        }
+        
+        function previewPhoto(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('photoPreview');
+                    const image = document.getElementById('previewImage');
+                    image.src = e.target.result;
+                    preview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+        
+        function clearPhoto() {
+            document.getElementById('diaryPhoto').value = '';
+            document.getElementById('photoPreview').style.display = 'none';
+            document.getElementById('previewImage').src = '';
         }
         
         function upgradeToPremium() {

@@ -338,6 +338,9 @@
             <div style="text-align:center;margin-bottom:15px;">
                 <button class="btn" onclick="showRewardedAd()" style="width:80%;max-width:300px;background:#ff8c00;">🎁 Прощай лень</button>
             </div>
+            <div style="text-align:center;margin-bottom:15px;">
+                <button class="btn secondary" onclick="resetActivity()" style="width:80%;max-width:300px;">🔄 Сбросить активность</button>
+            </div>
         </div>
 
         <div id="tracker" class="screen">
@@ -396,12 +399,6 @@
             </div>
 
             <div class="section">
-                <h3>Вывод средств</h3>
-                <button class="btn secondary" onclick="withdrawStars()">💸 Вывести Stars</button>
-                <button class="btn secondary" onclick="withdrawRub()">💸 Вывести рубли</button>
-            </div>
-
-            <div class="section">
                 <h3>История</h3>
                 <div class="transactions" id="transactions">
                     <div class="empty-state">Пока нет транзакций</div>
@@ -411,17 +408,43 @@
 
         <div id="spheres" class="screen">
             <div class="section">
-                <h3> Сферы жизни</h3>
+                <h3>🌟 Сферы жизни</h3>
                 <div id="lifeSpheres">
-                    ${Object.keys(state.lifeSpheres).map(sphere => `
-                        <div style="background:rgba(255,255,255,0.9);border-radius:8px;padding:12px;margin-bottom:10px;border:1px solid rgba(0,0,0,0.1);">
-                            <h4 style="margin:0 0 8px 0;color:#333;">${sphere}</h4>
-                            <div id="sphere-${sphere}">
-                                <div class="empty-state" style="font-size:12px;color:#666;">Нет мыслей</div>
-                            </div>
-                            <button class="btn" onclick="addThought('${sphere}')" style="width:100%;margin-top:8px;padding:8px;font-size:12px;">💭 Добавить мысль</button>
+                    <div style="background:rgba(255,255,255,0.9);border-radius:8px;padding:12px;margin-bottom:10px;border:1px solid rgba(0,0,0,0.1);">
+                        <h4 style="margin:0 0 8px 0;color:#333;">Здоровье</h4>
+                        <div id="sphere-Здоровье">
+                            <div class="empty-state" style="font-size:12px;color:#666;">Нет мыслей</div>
                         </div>
-                    `).join('')}
+                        <button class="btn" onclick="addThought('Здоровье')" style="width:100%;margin-top:8px;padding:8px;font-size:12px;">💭 Добавить мысль</button>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.9);border-radius:8px;padding:12px;margin-bottom:10px;border:1px solid rgba(0,0,0,0.1);">
+                        <h4 style="margin:0 0 8px 0;color:#333;">Работа</h4>
+                        <div id="sphere-Работа">
+                            <div class="empty-state" style="font-size:12px;color:#666;">Нет мыслей</div>
+                        </div>
+                        <button class="btn" onclick="addThought('Работа')" style="width:100%;margin-top:8px;padding:8px;font-size:12px;">💭 Добавить мысль</button>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.9);border-radius:8px;padding:12px;margin-bottom:10px;border:1px solid rgba(0,0,0,0.1);">
+                        <h4 style="margin:0 0 8px 0;color:#333;">Отдых</h4>
+                        <div id="sphere-Отдых">
+                            <div class="empty-state" style="font-size:12px;color:#666;">Нет мыслей</div>
+                        </div>
+                        <button class="btn" onclick="addThought('Отдых')" style="width:100%;margin-top:8px;padding:8px;font-size:12px;">💭 Добавить мысль</button>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.9);border-radius:8px;padding:12px;margin-bottom:10px;border:1px solid rgba(0,0,0,0.1);">
+                        <h4 style="margin:0 0 8px 0;color:#333;">Обучение</h4>
+                        <div id="sphere-Обучение">
+                            <div class="empty-state" style="font-size:12px;color:#666;">Нет мыслей</div>
+                        </div>
+                        <button class="btn" onclick="addThought('Обучение')" style="width:100%;margin-top:8px;padding:8px;font-size:12px;">💭 Добавить мысль</button>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.9);border-radius:8px;padding:12px;margin-bottom:10px;border:1px solid rgba(0,0,0,0.1);">
+                        <h4 style="margin:0 0 8px 0;color:#333;">Отношения</h4>
+                        <div id="sphere-Отношения">
+                            <div class="empty-state" style="font-size:12px;color:#666;">Нет мыслей</div>
+                        </div>
+                        <button class="btn" onclick="addThought('Отношения')" style="width:100%;margin-top:8px;padding:8px;font-size:12px;">💭 Добавить мысль</button>
+                    </div>
                 </div>
             </div>
             
@@ -441,6 +464,12 @@
                     <div class="empty-state">Добавьте свои привычки</div>
                 </div>
                 <button class="btn" onclick="addHabit()">➕ Добавить привычку</button>
+            </div>
+            
+            <div class="section">
+                <h3>💸 Вывод средств</h3>
+                <button class="btn secondary" onclick="withdrawStars()">💸 Вывести Stars</button>
+                <button class="btn secondary" onclick="withdrawRub()">💸 Вывести рубли</button>
             </div>
         </div>
 
@@ -681,43 +710,41 @@
 
         // Конвертация
         function convertSteps() {
-            if (state.steps < 1000) {
-                alert('Нужно минимум 1000 шагов!');
-                return;
+            if (state.steps >= 1000) {
+                const stars = Math.floor(state.steps / 1000);
+                state.steps -= stars * 1000;
+                state.stars += stars;
+                state.totalEarned += stars;
+                state.transactions.unshift({
+                    type: 'conversion',
+                    amount: `+${stars} ⭐`,
+                    date: new Date().toLocaleDateString()
+                });
+                updateDisplay();
+                sendBotNotification(`🔄 Конвертировано ${stars} шагов в Stars`);
+                alert(`Конвертировано ${stars} Stars!`);
+            } else {
+                alert('Минимум 1000 шагов для конвертации');
             }
-            
-            const stars = Math.floor(state.steps / 1000);
-            state.steps -= stars * 1000;
-            state.stars += stars;
-            state.totalSteps += stars * 1000;
-            
-            state.transactions.unshift({
-                type: 'stars',
-                amount: '+' + stars + ' ⭐',
-                date: new Date().toLocaleDateString()
-            });
-            
-            updateDisplay();
         }
 
         function convertKm() {
-            if (state.km < 1) {
-                alert('Нужно минимум 1 км!');
-                return;
+            if (state.km >= 1) {
+                const rub = Math.floor(state.km * 10);
+                state.km -= state.km;
+                state.rub += rub;
+                state.totalEarned += rub;
+                state.transactions.unshift({
+                    type: 'conversion',
+                    amount: `+${rub} ₽`,
+                    date: new Date().toLocaleDateString()
+                });
+                updateDisplay();
+                sendBotNotification(`🔄 Конвертировано ${rub} км в рубли`);
+                alert(`Конвертировано ${rub} рублей!`);
+            } else {
+                alert('Минимум 1 км для конвертации');
             }
-            
-            const rub = Math.floor(state.km) * 10;
-            state.km -= Math.floor(state.km);
-            state.rub += rub;
-            state.totalEarned += rub;
-            
-            state.transactions.unshift({
-                type: 'rub',
-                amount: '+' + rub + ' ₽',
-                date: new Date().toLocaleDateString()
-            });
-            
-            updateDisplay();
         }
 
         // Вывод
@@ -827,6 +854,7 @@
                 });
                 updateHabitsDisplay();
                 saveState();
+                sendBotNotification(`🎯 Добавлена привычка: ${habitName.trim()}`);
             }
         }
         
@@ -1170,6 +1198,40 @@
                 isReal: true
             });
             updateDisplay();
+            sendBotNotification(description);
+        }
+        
+        function sendBotNotification(message) {
+            const telegramId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
+            if (telegramId) {
+                // Отправляем уведомление на сервер для бота
+                fetch('https://your-payment-server.com/api/bot-notification', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        telegram_id: telegramId,
+                        message: message
+                    })
+                }).catch(err => console.log('Notification error:', err));
+            }
+        }
+        
+        function resetActivity() {
+            if (confirm('🔄 Сбросить всю активность?\n\nЭто обнулит:\n• Текущие шаги\n• Пройденные километры\n• Активный трекинг\n\nПродолжить?')) {
+                state.steps = 0;
+                state.km = 0;
+                
+                // Останавливаем трекинг если активен
+                if (tracking.active) {
+                    stopTracking();
+                }
+                
+                updateDisplay();
+                sendBotNotification('🔄 Активность пользователя сброшена');
+                alert('✅ Активность успешно сброшена!');
+            }
         }
 
         function showReferral() {

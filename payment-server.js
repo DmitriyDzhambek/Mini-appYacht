@@ -255,6 +255,25 @@ app.post('/webhook/yookassa', (req, res) => {
     res.sendStatus(200);
 });
 
+// API для отправки уведомлений в бот
+app.post('/api/bot-notification', (req, res) => {
+    const { telegram_id, message } = req.body;
+    
+    if (!telegram_id || !message) {
+        return res.status(400).json({ error: 'Missing telegram_id or message' });
+    }
+    
+    // Отправляем уведомление пользователю в Telegram
+    bot.sendMessage(telegram_id, `🔔 VeloPath уведомление:\n\n${message}`)
+        .then(() => {
+            res.json({ success: true, message: 'Notification sent' });
+        })
+        .catch(err => {
+            console.error('Bot notification error:', err);
+            res.status(500).json({ error: 'Failed to send notification' });
+        });
+});
+
 // Страница успешного платежа
 app.get('/payment/success', (req, res) => {
     const telegram_id = req.query.telegram_id;

@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>VeloPath - Зарабатывай на активности</title>
+    <title>Прощай лень - Зарабатывай на активности</title>
     <meta name="description" content="Mini App для отслеживания физической активности с наградами в Telegram">
     <meta name="format-detection" content="telephone=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
     <!-- Open Graph для Telegram -->
-    <meta property="og:title" content="VeloPath - Зарабатывай на активности">
+    <meta property="og:title" content="Прощай лень - Зарабатывай на активности">
     <meta property="og:description" content="Mini App для отслеживания активности с наградами">
     <meta property="og:image" content="background.jpg">
     <meta property="og:type" content="website">
@@ -393,8 +393,8 @@
             <div class="section">
                 <h3>💎 Premium функции</h3>
                 <button class="btn" onclick="upgradeToPremium()">👑 Премиум (99₽/99⭐/мес)</button>
-                <button class="btn" onclick="showOffers()">📋 Выполнить задания</button>
-                <button class="btn" onclick="showAffiliates()">🛒 Партнерские скидки</button>
+                <button class="btn" onclick="showOffers()">🌟 Публиковать объявления</button>
+                <button class="btn" onclick="showAffiliates()" style="display:none;">🛒 Партнерские скидки</button>
                 <button class="btn" onclick="showReferral()" style="background: #007bff;">👥 Пригласить друга</button>
             </div>
 
@@ -539,16 +539,13 @@
 
     <script>
         // Состояние
-        let state = {
+        const state = {
             steps: 0,
             km: 0,
             stars: 0,
             rub: 0,
-            totalSteps: 0,
-            totalKm: 0,
-            totalEarned: 0,
-            transactions: [],
-            badges: {first: false, km10: false, money: false},
+            premium: false,
+            premiumEndDate: null,
             habits: [],
             lifeSpheres: {
                 'Здоровье': [],
@@ -557,7 +554,13 @@
                 'Обучение': [],
                 'Отношения': []
             },
-            userThoughts: []
+            userThoughts: [],
+            userAds: [],
+            transactions: [],
+            badges: [],
+            totalSteps: 0,
+            totalKm: 0,
+            totalEarned: 0
         };
 
         // Трекер
@@ -1148,8 +1151,9 @@
                     date: new Date().toLocaleDateString()
                 };
                 state.lifeSpheres[sphere].push(newThought);
-                updateLifeSpheresDisplay();
+                // Сначала сохраняем состояние, потом обновляем дисплей
                 saveState();
+                updateLifeSpheresDisplay();
                 saveUserAction('thought_added', { 
                     sphere: sphere, 
                     thought_text: thought.trim(), 
@@ -1162,8 +1166,9 @@
             if (confirm('Удалить эту мысль?')) {
                 const thought = state.lifeSpheres[sphere][index];
                 state.lifeSpheres[sphere].splice(index, 1);
-                updateLifeSpheresDisplay();
+                // Сначала сохраняем состояние, потом обновляем дисплей
                 saveState();
+                updateLifeSpheresDisplay();
                 if (thought) {
                     saveUserAction('thought_deleted', { 
                         sphere: sphere, 
@@ -1182,8 +1187,9 @@
                     date: new Date().toLocaleDateString()
                 };
                 state.userThoughts.push(newThought);
-                updateThoughtsDisplay();
+                // Сначала сохраняем состояние, потом обновляем дисплей
                 saveState();
+                updateThoughtsDisplay();
                 saveUserAction('general_thought_added', { 
                     thought_text: thought.trim(),
                     thought_date: newThought.date
@@ -1195,8 +1201,9 @@
             if (confirm('Удалить эту мысль?')) {
                 const thought = state.userThoughts[index];
                 state.userThoughts.splice(index, 1);
-                updateThoughtsDisplay();
+                // Сначала сохраняем состояние, потом обновляем дисплей
                 saveState();
+                updateThoughtsDisplay();
                 if (thought) {
                     saveUserAction('general_thought_deleted', { 
                         thought_text: thought.text,
@@ -1253,45 +1260,129 @@
         }
 
         function showOffers() {
-            const offers = [
-                '🏃 Пробежать 1 км - +10 Stars',
-                '🚶 Пройти 5000 шагов - +15 Stars',
-                '🚴 Проехать 5 км - +20 Stars',
-                '🧘 Медитировать 10 минут - +5 Stars'
-            ];
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position:fixed;top:0;left:0;width:100%;height:100%;
+                background:rgba(0,0,0,0.8);z-index:1000;
+                display:flex;align-items:center;justify-content:center;
+            `;
             
-            const offer = offers[Math.floor(Math.random() * offers.length)];
-            if (confirm(`📋 Задание: ${offer}\n\nВыполнить?`)) {
-                const bonus = parseInt(offer.match(/\d+/)[0]);
-                state.stars += bonus;
-                state.transactions.unshift({
-                    type: 'offer',
-                    amount: `+${bonus} ⭐`,
-                    date: new Date().toLocaleDateString()
+            modal.innerHTML = `
+                <div style="background:white;border-radius:12px;padding:20px;margin:20px;max-width:400px;">
+                    <h3 style="margin:0 0 15px 0;color:#333;">� Публикация объявлений</h3>
+                    <div style="background:#f8f9fa;border-radius:8px;padding:15px;margin-bottom:15px;">
+                        <h4 style="margin:0 0 8px 0;color:#007bff;">⏰ 24 часа</h4>
+                        <p style="margin:0 0 8px 0;font-size:14px;">Публикация на 24 часа - бесплатно</p>
+                        <button class="btn" onclick="publishAd('24h')" style="width:100%;font-size:12px;">Опубликовать</button>
+                    </div>
+                    <div style="background:#f8f9fa;border-radius:8px;padding:15px;margin-bottom:15px;">
+                        <h4 style="margin:0 0 8px 0;color:#007bff;">� 1 неделя</h4>
+                        <p style="margin:0 0 8px 0;font-size:14px;">Публикация на неделю - 50 Stars</p>
+                        <button class="btn" onclick="publishAd('1w')" style="width:100%;font-size:12px;">Опубликовать за 50⭐</button>
+                    </div>
+                    <div style="background:#f8f9fa;border-radius:8px;padding:15px;margin-bottom:15px;">
+                        <h4 style="margin:0 0 8px 0;color:#007bff;">✏️ Редактирование</h4>
+                        <p style="margin:0 0 8px 0;font-size:14px;">Бесплатное редактирование объявлений</p>
+                        <button class="btn" onclick="editAd()" style="width:100%;font-size:12px;">Редактировать</button>
+                    </div>
+                    <button class="btn secondary" onclick="this.closest('div[style*=position]').remove()" style="width:100%;">Закрыть</button>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            modal.onclick = (e) => {
+                if (e.target === modal) modal.remove();
+            };
+        }
+        
+        function publishAd(duration) {
+            const title = prompt('Название объявления:');
+            const description = prompt('Описание объявления:');
+            const contact = prompt('Контактная информация:');
+            
+            if (title && description && contact) {
+                const ad = {
+                    id: Date.now(),
+                    title: title.trim(),
+                    description: description.trim(),
+                    contact: contact.trim(),
+                    duration: duration,
+                    created_at: new Date().toISOString(),
+                    status: 'active'
+                };
+                
+                // Сохраняем объявление
+                if (!state.userAds) state.userAds = [];
+                state.userAds.push(ad);
+                
+                // Списываем Stars за неделю
+                if (duration === '1w') {
+                    if (state.stars >= 50) {
+                        state.stars -= 50;
+                        addRealTransaction('ad_publish', '-50 ⭐', 'Публикация объявления на 1 неделю');
+                    } else {
+                        alert('Недостаточно Stars для публикации на неделю');
+                        return;
+                    }
+                } else {
+                    addRealTransaction('ad_publish', 'Бесплатно', 'Публикация объявления на 24 часа');
+                }
+                
+                saveState();
+                sendBotNotification(`📢 Опубликовано объявление: ${title}`);
+                saveUserAction('ad_published', { 
+                    ad_id: ad.id,
+                    title: title,
+                    duration: duration,
+                    cost: duration === '1w' ? 50 : 0
                 });
-                updateDisplay();
-                alert('✅ Задание выполнено! Награда начислена.');
+                
+                alert(`✅ Объявление "${title}" опубликовано на ${duration === '1w' ? '1 неделю' : '24 часа'}!`);
+            }
+        }
+        
+        function editAd() {
+            if (!state.userAds || state.userAds.length === 0) {
+                alert('У вас нет объявлений для редактирования');
+                return;
+            }
+            
+            const adList = state.userAds.map((ad, index) => 
+                `${index + 1}. ${ad.title} (${ad.duration})`
+            ).join('\n');
+            
+            const choice = prompt(`Выберите объявление для редактирования:\n\n${adList}\n\nВведите номер:`);
+            
+            if (choice && !isNaN(choice)) {
+                const index = parseInt(choice) - 1;
+                if (index >= 0 && index < state.userAds.length) {
+                    const ad = state.userAds[index];
+                    const newTitle = prompt('Название объявления:', ad.title);
+                    const newDescription = prompt('Описание объявления:', ad.description);
+                    const newContact = prompt('Контактная информация:', ad.contact);
+                    
+                    if (newTitle && newDescription && newContact) {
+                        ad.title = newTitle.trim();
+                        ad.description = newDescription.trim();
+                        ad.contact = newContact.trim();
+                        ad.updated_at = new Date().toISOString();
+                        
+                        saveState();
+                        sendBotNotification(`✏️ Отредактировано объявление: ${ad.title}`);
+                        saveUserAction('ad_edited', { 
+                            ad_id: ad.id,
+                            title: ad.title
+                        });
+                        
+                        alert('✅ Объявление успешно отредактировано!');
+                    }
+                }
             }
         }
 
         function showAffiliates() {
-            const affiliates = [
-                {name: 'Sportmaster', discount: '15%', url: 'https://sportmaster.ru'},
-                {name: 'Ozon', discount: '10%', url: 'https://ozon.ru'},
-                {name: 'Decathlon', discount: '20%', url: 'https://decathlon.ru'}
-            ];
-            
-            const aff = affiliates[Math.floor(Math.random() * affiliates.length)];
-            if (confirm(`🛒 ${aff.name} - скидка ${aff.discount}% на спорттовары!\n\nПерейти?`)) {
-                window.open(aff.url, '_blank');
-                state.rub += 5;
-                state.transactions.unshift({
-                    type: 'affiliate',
-                    amount: '+5 ₽',
-                    date: new Date().toLocaleDateString()
-                });
-                updateDisplay();
-            }
+            // Функция удалена - теперь используется публикация объявлений
+            alert('Используйте "Выполнить задания" для публикации объявлений');
         }
 
         function upgradeToPremium() {
@@ -1401,44 +1492,27 @@
                     return;
                 }
                 
-                // Создаем инвойс с правильной структурой
-                const invoiceData = {
-                    chat_id: telegramId,
-                    title: 'Премиум',
-                    description: '👑 Премиум доступ на 1 месяц\n\n• Без рекламы\n• Приоритетная поддержка\n• Расширенные функции привычек',
-                    payload: 'premium_subscription_1month',
-                    currency: 'XTR',
-                    prices: [
-                        {
-                            label: 'Премиум',
-                            amount: 990 // 99 Stars (99 XTR)
-                        }
-                    ]
-                };
-                
                 // Сохраняем информацию о платеже для обработки
                 saveUserAction('payment_initiated', { 
                     payment_type: 'telegram_stars',
                     amount: 99,
                     currency: 'XTR',
-                    payload: invoiceData.payload
+                    payload: 'premium_subscription_1month'
                 });
                 
-                // Отправляем запрос на создание инвойса боту
-                window.Telegram.WebApp.sendData(JSON.stringify({
-                    action: 'create_invoice',
-                    invoice: invoiceData,
-                    bot_token: '8677953174:AAFo2stidzYABtiG_43W_zFWFlKh1TtxzYA'
-                }));
-                
-                // Альтернативный метод - открытие инвойса через WebApp API
+                // Создаем инвойс с правильной структурой и открываем напрямую
                 try {
                     window.Telegram.WebApp.openInvoice({
-                        title: invoiceData.title,
-                        description: invoiceData.description,
-                        payload: invoiceData.payload,
-                        currency: invoiceData.currency,
-                        prices: invoiceData.prices
+                        title: 'Премиум',
+                        description: '👑 Премиум доступ на 1 месяц\n\n• Без рекламы\n• Приоритетная поддержка\n• Расширенные функции привычек',
+                        payload: 'premium_subscription_1month',
+                        currency: 'XTR',
+                        prices: [
+                            {
+                                label: 'Премиум',
+                                amount: 990 // 99 Stars (99 XTR)
+                            }
+                        ]
                     });
                 } catch (error) {
                     console.error('Invoice error:', error);
@@ -1446,7 +1520,19 @@
                     window.Telegram.WebApp.sendData(JSON.stringify({
                         action: 'request_premium_payment',
                         method: 'telegram_stars',
-                        invoice_data: invoiceData
+                        invoice_data: {
+                            chat_id: telegramId,
+                            title: 'Премиум',
+                            description: '👑 Премиум доступ на 1 месяц\n\n• Без рекламы\n• Приоритетная поддержка\n• Расширенные функции привычек',
+                            payload: 'premium_subscription_1month',
+                            currency: 'XTR',
+                            prices: [
+                                {
+                                    label: 'Премиум',
+                                    amount: 990 // 99 Stars (99 XTR)
+                                }
+                            ]
+                        }
                     }));
                 }
             } else {

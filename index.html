@@ -359,7 +359,7 @@
     
     <div class="container">
         <header class="header">
-            <h1>VeloPath</h1>
+            <h1>Прощай лень</h1>
             <p>Зарабатывай награды за активность</p>
         </header>
 
@@ -730,7 +730,7 @@
             });
             
             // Показываем уведомление пользователю
-            alert('🎉 Премиум подписка успешно активирована!\n\nСпасибо за поддержку VeloPath! ❤️');
+            alert('🎉 Премиум подписка успешно активирована!\n\nСпасибо за поддержку Прощай лень! ❤️');
             
             // Обновляем интерфейс
             updateDisplay();
@@ -738,6 +738,35 @@
 
         // Инициализация при загрузке
         const telegramReady = initTelegramWebApp();
+        
+        // Автосохранение при входе в приложение
+        window.addEventListener('load', () => {
+            loadState();
+            saveState();
+            saveUserAction('app_entry', {
+                timestamp: new Date().toISOString(),
+                user_agent: navigator.userAgent
+            });
+        });
+        
+        // Автосохранение при выходе из приложения
+        window.addEventListener('beforeunload', () => {
+            saveState();
+            saveUserAction('app_exit', {
+                timestamp: new Date().toISOString(),
+                session_duration: Date.now() - (window.sessionStartTime || Date.now())
+            });
+        });
+        
+        window.addEventListener('pagehide', () => {
+            saveState();
+            saveUserAction('app_hidden', {
+                timestamp: new Date().toISOString()
+            });
+        });
+        
+        // Сохраняем время начала сессии
+        window.sessionStartTime = Date.now();
 
         // Навигация
         function showScreen(screen) {
@@ -745,6 +774,12 @@
             document.getElementById(screen).classList.add('active');
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
             event.target.closest('.nav-btn')?.classList.add('active');
+            
+            // Сохраняем текущий экран
+            saveUserAction('screen_changed', {
+                screen: screen,
+                timestamp: new Date().toISOString()
+            });
         }
 
         // Трекер
@@ -1072,11 +1107,11 @@
 
         // Сохранение состояния
         function saveState() {
-            localStorage.setItem('velopath', JSON.stringify(state));
+            localStorage.setItem('proshaylen', JSON.stringify(state));
         }
 
         function loadState() {
-            const saved = localStorage.getItem('velopath');
+            const saved = localStorage.getItem('proshaylen');
             if (saved) {
                 state = {...state, ...JSON.parse(saved)};
                 updateDisplay();
@@ -1335,6 +1370,7 @@
                         <p style="margin:0 0 8px 0;font-size:14px;">Бесплатное редактирование объявлений</p>
                         <button class="btn" onclick="editAd()" style="width:100%;font-size:12px;">Редактировать</button>
                     </div>
+                    <button class="btn" onclick="showScreen('home'); this.closest('div[style*=position]').remove();" style="width:100%;margin-bottom:10px;background:#28a745;">🏠 Вернуться на главное меню</button>
                     <button class="btn secondary" onclick="this.closest('div[style*=position]').remove()" style="width:100%;">Закрыть</button>
                 </div>
             `;
@@ -1633,7 +1669,7 @@
                 body: JSON.stringify({
                     telegram_id: telegramId,
                     amount: amount,
-                    description: 'VeloPath Premium подписка - 1 месяц'
+                    description: 'Прощай лень Premium подписка - 1 месяц'
                 })
             })
             .then(response => response.json())

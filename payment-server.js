@@ -241,6 +241,13 @@ app.post('/webhook/yookassa', (req, res) => {
                     (user_id, subscription_type, amount, currency, start_date, end_date)
                     VALUES (?, 'premium', ?, ?, datetime('now'), datetime('now', '+1 month'))
                 `, [row.user_id, payment.amount.value, payment.amount.currency]);
+                
+                // Добавляем реальную транзакцию для пользователя
+                db.run(`
+                    INSERT INTO payments 
+                    (user_id, amount, currency, payment_date, type)
+                    VALUES (?, ?, ?, datetime('now'), 'premium_purchase')
+                `, [row.user_id, payment.amount.value, payment.amount.currency]);
             }
         });
     }
@@ -295,7 +302,23 @@ app.post('/webhook/telegram', (req, res) => {
             INSERT OR REPLACE INTO users 
             (telegram_id, username, first_name, last_name, is_premium, premium_start_date, premium_end_date, telegram_payment_charge_id)
             VALUES (?, ?, ?, ?, 1, datetime('now'), datetime('now', '+1 month'), ?)
-        `, [user.id, user.username, user.first_name, user.last_name, payment.telegram_payment_charge_id]);
+        `, [user.id, user.username, user.first_name, user.last_name, payment.telegram_payment_charge_id], function(err) {
+            if (!err) {
+                // Добавляем реальную транзакцию
+                db.run(`
+                    INSERT INTO payments 
+                    (user_id, telegram_payment_charge_id, amount, currency, payment_date, type)
+                    VALUES (?, ?, ?, ?, datetime('now'), 'premium_purchase')
+                `, [this.lastID, payment.telegram_payment_charge_id, payment.total_amount / 100, 'XTR']);
+                
+                // Добавляем подписку
+                db.run(`
+                    INSERT INTO subscriptions 
+                    (user_id, subscription_type, amount, currency, start_date, end_date, telegram_payment_charge_id)
+                    VALUES (?, 'premium', ?, ?, datetime('now'), datetime('now', '+1 month'), ?)
+                `, [this.lastID, payment.total_amount / 100, 'XTR', payment.telegram_payment_charge_id]);
+            }
+        });
         
         // Отправляем подтверждение
         bot.sendMessage(user.id, '🎉 Премиум активирован! Спасибо за покупку!\n\nВаш премиум статус действителен до: ' + 

@@ -392,7 +392,7 @@
                 <button class="btn" onclick="upgradeToPremium()">👑 Премиум (99₽/99⭐/мес)</button>
                 <button class="btn" onclick="showOffers()">📋 Выполнить задания</button>
                 <button class="btn" onclick="showAffiliates()">🛒 Партнерские скидки</button>
-                <button class="btn secondary" onclick="showReferral()">👥 Пригласить друга</button>
+                <button class="btn" onclick="showReferral()" style="background: #007bff;">👥 Пригласить друга</button>
             </div>
 
             <div class="section">
@@ -776,13 +776,16 @@
             document.getElementById('totalEarned').textContent = state.totalEarned;
             
             const transactionsEl = document.getElementById('transactions');
-            if (state.transactions.length === 0) {
-                transactionsEl.innerHTML = '<div class="empty-state">Пока нет транзакций</div>';
+            // Показываем только реальные транзакции (isReal: true) или выводы средств
+            const realTransactions = state.transactions.filter(t => t.isReal === true || t.type === 'withdrawal');
+            
+            if (realTransactions.length === 0) {
+                transactionsEl.innerHTML = '<div class="empty-state">Пока нет реальных транзакций</div>';
             } else {
-                transactionsEl.innerHTML = state.transactions.slice(0, 10).map(t => `
+                transactionsEl.innerHTML = realTransactions.slice(0, 10).map(t => `
                     <div class="transaction">
                         <div>
-                            <div class="transaction-type">${t.type}</div>
+                            <div class="transaction-type">${t.description || t.type}</div>
                             <div class="transaction-amount">${t.amount}</div>
                         </div>
                         <div class="transaction-date">${t.date}</div>
@@ -1005,19 +1008,61 @@
         }
 
         function upgradeToPremium() {
-            // Выбор способа оплаты
-            const paymentMethod = confirm('Выберите способ оплаты:\n\nОК - YooKassa (карта/СБП)\nОтмена - Telegram Stars');
+            showPaymentModal();
+        }
+        
+        function showPaymentModal() {
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.8);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 1000;
+            `;
             
-            if (paymentMethod) {
-                // YooKassa оплата
-                upgradeToPremiumYooKassa();
-            } else {
-                // Telegram Stars оплата
-                upgradeToPremiumTelegramStars();
+            modal.innerHTML = `
+                <div style="background: white; padding: 30px; border-radius: 15px; max-width: 350px; width: 90%; text-align: center;">
+                    <h3 style="margin: 0 0 20px 0; color: #333;">👑 Выберите способ оплаты</h3>
+                    <p style="margin: 0 0 25px 0; color: #666; font-size: 14px;">
+                        Премиум подписка на 1 месяц<br>
+                        • Без рекламы<br>
+                        • Эксклюзивные маршруты<br>
+                        • Продвинутая статистика<br>
+                        • Приоритетная поддержка
+                    </p>
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <button onclick="upgradeToPremiumYooKassa()" style="background: #007bff; color: white; border: none; padding: 15px; border-radius: 8px; cursor: pointer; font-size: 16px;">
+                            💳 YooKassa - 99₽/мес
+                        </button>
+                        <button onclick="upgradeToPremiumTelegramStars()" style="background: #ff8c00; color: white; border: none; padding: 15px; border-radius: 8px; cursor: pointer; font-size: 16px;">
+                            ⭐ Telegram Stars - 99⭐/мес
+                        </button>
+                        <button onclick="closePaymentModal()" style="background: #6c757d; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-size: 14px;">
+                            Отмена
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            window.currentPaymentModal = modal;
+        }
+        
+        function closePaymentModal() {
+            if (window.currentPaymentModal) {
+                document.body.removeChild(window.currentPaymentModal);
+                window.currentPaymentModal = null;
             }
         }
         
         function upgradeToPremiumYooKassa() {
+            closePaymentModal();
             const telegramId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id || 'demo_user';
             const amount = 99.00; // 99 рублей
             
@@ -1057,6 +1102,7 @@
         }
         
         function upgradeToPremiumTelegramStars() {
+            closePaymentModal();
             // Отправляем инвойс через Telegram WebApp
             if (window.Telegram && window.Telegram.WebApp) {
                 const invoiceData = {
@@ -1110,13 +1156,20 @@
         function activatePremiumDemo(amount) {
             state.premium = true;
             state.premiumEndDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-            state.transactions.unshift({
-                type: 'premium',
-                amount: '-' + amount,
-                date: new Date().toLocaleDateString()
-            });
+            // Не добавляем транзакцию в историю для демо режима
             updateDisplay();
             alert('✅ Премиум активирован! Спасибо за поддержку!');
+        }
+        
+        function addRealTransaction(type, amount, description) {
+            state.transactions.unshift({
+                type: type,
+                amount: amount,
+                description: description,
+                date: new Date().toLocaleDateString(),
+                isReal: true
+            });
+            updateDisplay();
         }
 
         function showReferral() {

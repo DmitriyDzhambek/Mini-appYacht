@@ -596,6 +596,33 @@
                     document.documentElement.style.setProperty('--secondary', tg.themeParams.secondary_bg_color || '#0f0f23');
                 }
                 
+                // Обработка данных от бота
+                window.Telegram.WebApp.onEvent('webAppData', (data) => {
+                    try {
+                        const parsedData = JSON.parse(data);
+                        if (parsedData.action === 'premium_activated') {
+                            activatePremium(parsedData.amount);
+                        }
+                    } catch (error) {
+                        console.error('Error parsing web app data:', error);
+                    }
+                });
+                
+                // Обработка успешных платежей
+                window.Telegram.WebApp.onEvent('invoiceClosed', (data) => {
+                    try {
+                        if (data.status === 'paid') {
+                            // Платеж успешно завершен
+                            handleSuccessfulPayment();
+                        } else if (data.status === 'failed') {
+                            // Платеж не удался
+                            alert('Платеж не удался. Попробуйте еще раз.');
+                        }
+                    } catch (error) {
+                        console.error('Error handling invoice closed:', error);
+                    }
+                });
+                
                 // Настройка заголовка
                 tg.setHeaderColor('#1a1a2e');
                 
@@ -626,6 +653,36 @@
             return false;
         }
         
+        // Обработка успешного платежа
+        function handleSuccessfulPayment() {
+            // Активируем премиум
+            state.premium = true;
+            state.premiumEndDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+            
+            // Добавляем транзакцию
+            addRealTransaction('payment', '99 ⭐', 'Премиум подписка на 1 месяц');
+            
+            // Сохраняем состояние
+            saveState();
+            
+            // Отправляем уведомление
+            sendBotNotification('🎉 Премиум подписка активирована! Спасибо за покупку!');
+            
+            // Сохраняем действие
+            saveUserAction('premium_activated', {
+                payment_method: 'telegram_stars',
+                amount: 99,
+                currency: 'XTR',
+                activation_date: new Date().toISOString()
+            });
+            
+            // Показываем уведомление пользователю
+            alert('🎉 Премиум подписка успешно активирована!\n\nСпасибо за поддержку VeloPath! ❤️');
+            
+            // Обновляем интерфейс
+            updateDisplay();
+        }
+
         // Инициализация при загрузке
         const telegramReady = initTelegramWebApp();
 
@@ -1344,27 +1401,37 @@
                     return;
                 }
                 
-                // Создаем инвойс напрямую через WebApp API
+                // Создаем инвойс с правильной структурой
                 const invoiceData = {
-                    title: 'VeloPath Premium',
-                    description: '👑 Премиум доступ на 1 месяц:\n\n• Без рекламы\n• Приоритетная поддержка\n• Расширенные функции привычек',
+                    chat_id: telegramId,
+                    title: 'Премиум',
+                    description: '👑 Премиум доступ на 1 месяц\n\n• Без рекламы\n• Приоритетная поддержка\n• Расширенные функции привычек',
                     payload: 'premium_subscription_1month',
                     currency: 'XTR',
                     prices: [
                         {
-                            label: 'Премиум подписка',
+                            label: 'Премиум',
                             amount: 990 // 99 Stars (99 XTR)
                         }
                     ]
                 };
                 
-                // Отправляем инвойс напрямую через WebApp
+                // Сохраняем информацию о платеже для обработки
+                saveUserAction('payment_initiated', { 
+                    payment_type: 'telegram_stars',
+                    amount: 99,
+                    currency: 'XTR',
+                    payload: invoiceData.payload
+                });
+                
+                // Отправляем запрос на создание инвойса боту
                 window.Telegram.WebApp.sendData(JSON.stringify({
                     action: 'create_invoice',
-                    invoice: invoiceData
+                    invoice: invoiceData,
+                    bot_token: '8677953174:AAFo2stidzYABtiG_43W_zFWFlKh1TtxzYA'
                 }));
                 
-                // Альтернативный метод - открытие инвойса
+                // Альтернативный метод - открытие инвойса через WebApp API
                 try {
                     window.Telegram.WebApp.openInvoice({
                         title: invoiceData.title,
@@ -1378,7 +1445,8 @@
                     // Fallback - отправляем запрос боту
                     window.Telegram.WebApp.sendData(JSON.stringify({
                         action: 'request_premium_payment',
-                        method: 'telegram_stars'
+                        method: 'telegram_stars',
+                        invoice_data: invoiceData
                     }));
                 }
             } else {

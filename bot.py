@@ -412,11 +412,21 @@ async def payment_handler(message: Message) -> None:
         user_id = message.from_user.id
         amount = message.successful_payment.total_amount / 100  # Конвертируем из копеек
         currency = message.successful_payment.currency
+        payload = message.successful_payment.invoice_payload
         
         # Активируем премиум
         activate_premium(user_id, amount, currency, "telegram_stars")
         
-        # Отправляем подтверждение
+        # Отправляем подтверждение в Mini App через WebApp
+        web_app_data = {
+            "action": "premium_activated",
+            "amount": amount,
+            "currency": currency,
+            "payload": payload,
+            "activation_date": datetime.now().isoformat()
+        }
+        
+        # Отправляем подтверждение пользователю
         await message.answer(
             f"🎉 <b>Оплата успешно завершена!</b>\n\n"
             f"💳 Сумма: {amount} {currency}\n"
@@ -430,6 +440,9 @@ async def payment_handler(message: Message) -> None:
                 ]
             )
         )
+        
+        # Логируем успешный платеж
+        logging.info(f"Successful payment: user_id={user_id}, amount={amount} {currency}, payload={payload}")
 
 # Обработчик всех остальных сообщений
 @dp.message()
@@ -457,8 +470,32 @@ async def main() -> None:
     # Инициализируем базу данных
     init_db()
     
-    # Запускаем бота
+    # Удаляем вебхук перед запуском
+    await bot.delete_webhook(drop_pending_updates=True)
+    
+    # Устанавливаем вебхук (если нужно)
+    # webhook_url = "https://your-domain.com/webhook"
+    # await bot.set_webhook(webhook_url)
+    
+    # Запускаем бота в режиме polling
+    logging.info("Starting bot in polling mode...")
     await dp.start_polling(bot)
+
+# Webhook обработчик (для развертывания)
+async def webhook_handler(update: dict) -> dict:
+    """Обработчик webhook для развертывания"""
+    try:
+        # Конвертируем dict в Update объект
+        from aiogram.types import Update
+        telegram_update = Update.model_validate(update)
+        
+        # Обрабатываем обновление
+        await dp.feed_update(bot, telegram_update)
+        
+        return {"status": "ok"}
+    except Exception as e:
+        logging.error(f"Webhook error: {e}")
+        return {"status": "error", "message": str(e)}
 
 if __name__ == "__main__":
     try:

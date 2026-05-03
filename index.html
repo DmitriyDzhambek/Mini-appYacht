@@ -722,6 +722,13 @@
                 bikeAge: 2,
                 notes: []
             },
+            referral: {
+                code: null,
+                link: null,
+                invitedFriends: [],
+                totalReferrals: 0,
+                rewardsReceived: []
+            },
             transactions: [],
             badges: [],
             totalSteps: 0,
@@ -2365,13 +2372,181 @@
         }
 
         function showReferral() {
-            const referralCode = 'VELO' + Math.random().toString(36).substr(2, 9).toUpperCase();
-            const referralLink = `https://t.me/MiniYacht_Bot?startapp=${referralCode}`;
-            
-            if (confirm(`👥 Пригласите друга:\n\nКод: ${referralCode}\nСсылка: ${referralLink}\n\nБонус: 50 Stars за каждого друга!\n\nСкопировать ссылку?`)) {
-                navigator.clipboard.writeText(referralLink);
-                alert('📋 Ссылка скопирована! Поделитесь с друзьями.');
+            // Генерируем или получаем существующий реферальный код
+            if (!state.referral.code) {
+                state.referral.code = 'PROSHAY' + Math.random().toString(36).substr(2, 9).toUpperCase();
+                state.referral.link = `https://t.me/MiniYacht_Bot?startapp=${state.referral.code}`;
+                saveState();
             }
+            
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position:fixed;top:0;left:0;width:100%;height:100%;
+                background:rgba(0,0,0,0.8);z-index:1000;
+                display:flex;align-items:center;justify-content:center;
+            `;
+            
+            modal.innerHTML = `
+                <div style="background:white;border-radius:12px;padding:20px;margin:20px;max-width:400px;">
+                    <h3 style="margin:0 0 15px 0;text-align:center;color:#333;">
+                        👥 Пригласите друга
+                    </h3>
+                    
+                    <div style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);border-radius:8px;padding:15px;margin-bottom:15px;color:white;text-align:center;">
+                        <h4 style="margin:0 0 10px 0;font-size:16px;">🎁 Ваши бонусы:</h4>
+                        <div style="font-size:14px;margin-bottom:5px;">💎 50 Stars за каждого друга</div>
+                        <div style="font-size:14px;">👑 Premium на 1 месяц за 3 друзей</div>
+                    </div>
+                    
+                    <div style="background:#f8f9fa;border-radius:8px;padding:15px;margin-bottom:15px;">
+                        <h4 style="margin:0 0 10px 0;color:#333;font-size:14px;">🔗 Ваша реферальная ссылка:</h4>
+                        <div style="background:white;border:2px solid #007bff;border-radius:5px;padding:10px;margin-bottom:10px;word-break:break-all;font-family:monospace;font-size:12px;">
+                            ${state.referral.link}
+                        </div>
+                        <button class="btn" onclick="copyReferralLink()" style="width:100%;background:#007bff;color:white;">
+                            📋 Копировать ссылку
+                        </button>
+                    </div>
+                    
+                    <div style="background:#f8f9fa;border-radius:8px;padding:15px;margin-bottom:15px;">
+                        <h4 style="margin:0 0 10px 0;color:#333;font-size:14px;">🏷️ Ваш реферальный код:</h4>
+                        <div style="background:white;border:2px solid #28a745;border-radius:5px;padding:10px;margin-bottom:10px;text-align:center;font-family:monospace;font-size:16px;font-weight:bold;color:#28a745;">
+                            ${state.referral.code}
+                        </div>
+                        <button class="btn" onclick="copyReferralCode()" style="width:100%;background:#28a745;color:white;">
+                            📋 Копировать код
+                        </button>
+                    </div>
+                    
+                    <div style="background:#e7f3ff;border-radius:8px;padding:15px;margin-bottom:15px;">
+                        <h4 style="margin:0 0 10px 0;color:#333;font-size:14px;">📊 Ваша статистика:</h4>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:12px;">
+                            <div>
+                                <span style="color:#666;">Приглашено друзей:</span>
+                                <div style="font-weight:bold;color:#007bff;">${state.referral.totalReferrals} чел.</div>
+                            </div>
+                            <div>
+                                <span style="color:#666;">Получено бонусов:</span>
+                                <div style="font-weight:bold;color:#28a745;">${state.referral.rewardsReceived.length} шт.</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="background:#fff3cd;border-radius:8px;padding:15px;margin-bottom:15px;">
+                        <h4 style="margin:0 0 10px 0;color:#333;font-size:14px;">📱 Как пригласить:</h4>
+                        <ol style="margin:0;padding-left:20px;font-size:12px;color:#666;">
+                            <li>Скопируйте ссылку или код</li>
+                            <li>Отправьте другу</li>
+                            <li>Друг регистрируется по ссылке</li>
+                            <li>Вы получаете бонусы автоматически</li>
+                        </ol>
+                    </div>
+                    
+                    <button class="btn secondary" onclick="this.closest('div[style*=position]').remove()" style="width:100%;">
+                        Закрыть
+                    </button>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            modal.onclick = (e) => {
+                if (e.target === modal) modal.remove();
+            };
+            
+            saveUserAction('referral_modal_opened', {
+                referral_code: state.referral.code,
+                total_referrals: state.referral.totalReferrals
+            });
+        }
+        
+        function copyReferralLink() {
+            navigator.clipboard.writeText(state.referral.link).then(() => {
+                alert('📋 Реферальная ссылка скопирована! Отправьте ее друзьям.');
+                saveUserAction('referral_link_copied', {
+                    referral_code: state.referral.code
+                });
+            }).catch(() => {
+                alert('❌ Не удалось скопировать ссылку. Попробуйте еще раз.');
+            });
+        }
+        
+        function copyReferralCode() {
+            navigator.clipboard.writeText(state.referral.code).then(() => {
+                alert('📋 Реферальный код скопирован! Отправьте его друзьям.');
+                saveUserAction('referral_code_copied', {
+                    referral_code: state.referral.code
+                });
+            }).catch(() => {
+                alert('❌ Не удалось скопировать код. Попробуйте еще раз.');
+            });
+        }
+        
+        function processReferralReward(referralCode, friendInfo) {
+            if (state.referral.code === referralCode) {
+                // Добавляем друга в список приглашенных
+                const newFriend = {
+                    id: Date.now(),
+                    ...friendInfo,
+                    invitedAt: new Date().toISOString(),
+                    rewardProcessed: false
+                };
+                
+                state.referral.invitedFriends.push(newFriend);
+                state.referral.totalReferrals += 1;
+                
+                // Проверяем награды
+                const totalReferrals = state.referral.totalReferrals;
+                
+                // Бонус за каждого друга
+                state.stars += 50;
+                addRealTransaction('referral_bonus', '+50 ⭐', `Бонус за друга #${totalReferrals}`);
+                
+                // Premium на месяц за 3 друзей
+                if (totalReferrals === 3) {
+                    const premiumEndDate = new Date();
+                    premiumEndDate.setMonth(premiumEndDate.getMonth() + 1);
+                    state.premium = true;
+                    state.premiumEndDate = premiumEndDate.toISOString();
+                    
+                    state.referral.rewardsReceived.push({
+                        type: 'premium_1_month',
+                        receivedAt: new Date().toISOString(),
+                        referralCount: totalReferrals
+                    });
+                    
+                    addRealTransaction('referral_premium', '👑 Premium', 'Premium за 3 приглашенных друзей');
+                    alert('🎉 Поздравляем! Вы получили Premium на 1 месяц за 3 приглашенных друзей!');
+                } else if (totalReferrals === 6) {
+                    // Дополнительный Premium за 6 друзей
+                    const premiumEndDate = new Date(state.premiumEndDate || new Date());
+                    premiumEndDate.setMonth(premiumEndDate.getMonth() + 1);
+                    state.premiumEndDate = premiumEndDate.toISOString();
+                    
+                    state.referral.rewardsReceived.push({
+                        type: 'premium_additional',
+                        receivedAt: new Date().toISOString(),
+                        referralCount: totalReferrals
+                    });
+                    
+                    addRealTransaction('referral_premium_extra', '👑 Premium+', 'Дополнительный Premium за 6 друзей');
+                    alert('🎉 Отлично! Вы получили дополнительный месяц Premium за 6 приглашенных друзей!');
+                }
+                
+                newFriend.rewardProcessed = true;
+                saveState();
+                updateDisplay();
+                
+                saveUserAction('referral_reward_processed', {
+                    referral_code: referralCode,
+                    friend_id: newFriend.id,
+                    total_referrals: totalReferrals,
+                    stars_bonus: 50,
+                    premium_awarded: totalReferrals === 3 || totalReferrals === 6
+                });
+                
+                return true;
+            }
+            return false;
         }
 
         // Имитация шагов для демонстрации

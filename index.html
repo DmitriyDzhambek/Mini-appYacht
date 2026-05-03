@@ -564,9 +564,12 @@
         let tracking = {
             active: false,
             startTime: null,
+            steps: 0,
             distance: 0,
-            watchId: null,
-            activity: 'walk'
+            activity: 'walk',
+            lastMotionTime: 0,
+            motionThreshold: 15, // минимальное пороговое значение для движения
+            stepCooldown: 300 // минимальная задержка между шагами в мс
         };
 
         // Telegram WebApp
@@ -646,46 +649,170 @@
         }
 
         function startTracking() {
+            if (tracking.active) return;
+            
             tracking.active = true;
             tracking.startTime = Date.now();
+            tracking.steps = 0;
             tracking.distance = 0;
             
-            if (navigator.geolocation) {
-                tracking.watchId = navigator.geolocation.watchPosition(
-                    pos => {
-                        tracking.distance += 0.001; // Симуляция
-                        updateTrackerDisplay();
-                    },
-                    err => console.log('GPS ошибка:', err),
-                    {enableHighAccuracy: true}
-                );
+            // Запрашиваем разрешения на использование датчиков движения
+            if (window.DeviceMotionEvent && typeof DeviceMotionEvent.requestPermission === 'function') {
+                // iOS 13+ требует запрос разрешения
+                DeviceMotionEvent.requestPermission()
+                    .then(response => {
+                        if (response === 'granted') {
+                            initMotionSensors();
+                        } else {
+                            alert('Требуется разрешение на использование датчиков движения');
+                            stopTracking();
+                        }
+                    })
+                    .catch(console.error);
+            } else {
+                // Другие устройства
+                initMotionSensors();
             }
             
-            document.getElementById('startBtn').style.display = 'none';
-            document.getElementById('stopBtn').style.display = 'block';
+            showScreen('tracker');
+        }
+        
+        function initMotionSensors() {
+            // Используем DeviceMotionEvent для реального отслеживания движения
+            if (window.DeviceMotionEvent) {
+                window.addEventListener('devicemotion', handleDeviceMotion);
+            } else if (window.DeviceOrientationEvent) {
+                // Fallback для старых устройств
+                window.addEventListener('deviceorientation', handleDeviceOrientation);
+            } else {
+                // Имитация для десктопа/тестирования
+                initDesktopTracking();
+            }
+        }
+        
+        function handleDeviceMotion(event) {
+            if (!tracking.active) return;
+            
+            const now = Date.now();
+            const acceleration = event.accelerationIncludingGravity;
+            
+            if (acceleration && acceleration.x !== null && acceleration.y !== null && acceleration.z !== null) {
+                // Вычисляем общую величину ускорения
+                const totalAcceleration = Math.sqrt(
+                    acceleration.x * acceleration.x + 
+                    acceleration.y * acceleration.y + 
+                    acceleration.z * acceleration.z
+                );
+                
+                // Проверяем, достаточно ли сильное движение и прошло ли достаточно времени
+                if (totalAcceleration > tracking.motionThreshold && 
+                    now - tracking.lastMotionTime > tracking.stepCooldown) {
+                    
+                    tracking.steps++;
+                    tracking.lastMotionTime = now;
+                    
+                    // Расчет расстояния на основе типа активности
+                    const stepDistance = tracking.activity === 'walk' ? 0.0007 : 
+                                       tracking.activity === 'run' ? 0.001 : 
+                                       0.002; // bike
+                    
+                    tracking.distance += stepDistance;
+                    
+                    updateTrackerDisplay();
+                }
+            }
+        }
+        
+        function handleDeviceOrientation(event) {
+            if (!tracking.active) return;
+            
+            const now = Date.now();
+            const alpha = event.alpha; // Z-axis
+            const beta = event.beta;   // X-axis
+            const gamma = event.gamma; // Y-axis
+            
+            if (alpha !== null && beta !== null && gamma !== null) {
+                // Вычисляем общее изменение ориентации
+                const totalRotation = Math.sqrt(
+                    alpha * alpha + beta * beta + gamma * gamma
+                );
+                
+                // Проверяем на значительное движение
+                if (totalRotation > 30 && now - tracking.lastMotionTime > tracking.stepCooldown) {
+                    tracking.steps++;
+                    tracking.lastMotionTime = now;
+                    
+                    const stepDistance = tracking.activity === 'walk' ? 0.0007 : 
+                                       tracking.activity === 'run' ? 0.001 : 
+                                       0.002;
+                    
+                    tracking.distance += stepDistance;
+                    
+                    updateTrackerDisplay();
+                }
+            }
+        }
+        
+        function initDesktopTracking() {
+            // Имитация для десктопа/тестирования
+            trackingInterval = setInterval(() => {
+                if (tracking.active) {
+                    // Добавляем шаги только с небольшой вероятностью
+                    if (Math.random() > 0.7) {
+                        tracking.steps += Math.floor(Math.random() * 2) + 1;
+                        tracking.distance += Math.random() * 0.01;
+                        
+                        if (tracking.activity === 'run') {
+                            tracking.distance += Math.random() * 0.02;
+                        } else if (tracking.activity === 'bike') {
+                            tracking.distance += Math.random() * 0.05;
+                        }
+                        
+                        updateTrackerDisplay();
+                    }
+                }
+            }, 1500);
             
             updateInterval = setInterval(updateTrackerDisplay, 1000);
         }
 
         function stopTracking() {
             tracking.active = false;
+            
+            // Удаляем слушателей событий движения
+            if (window.DeviceMotionEvent) {
+                window.removeEventListener('devicemotion', handleDeviceMotion);
+            }
+            if (window.DeviceOrientationEvent) {
+                window.removeEventListener('deviceorientation', handleDeviceOrientation);
+            }
+            
             if (tracking.watchId) {
                 navigator.geolocation.clearWatch(tracking.watchId);
             }
             clearInterval(updateInterval);
+            clearInterval(trackingInterval);
             
+            // Сохраняем результаты
+            state.steps += tracking.steps;
             state.km += tracking.distance;
+            state.totalSteps += tracking.steps;
             state.totalKm += tracking.distance;
             
-            if (tracking.distance > 0) {
-                state.transactions.unshift({
-                    type: 'route',
-                    amount: tracking.distance.toFixed(2) + ' км',
-                    date: new Date().toLocaleDateString()
-                });
-                checkBadges();
+            // Начисляем награды
+            if (tracking.steps >= 100) {
+                const stars = Math.floor(tracking.steps / 100);
+                state.stars += stars;
+                state.totalEarned += stars;
             }
             
+            if (tracking.distance >= 1) {
+                const rub = Math.floor(tracking.distance * 10);
+                state.rub += rub;
+                state.totalEarned += rub;
+            }
+            
+            checkBadges();
             updateDisplay();
             showScreen('home');
             
@@ -1060,9 +1187,8 @@
                     <p style="margin: 0 0 25px 0; color: #666; font-size: 14px;">
                         Премиум подписка на 1 месяц<br>
                         • Без рекламы<br>
-                        • Эксклюзивные маршруты<br>
-                        • Продвинутая статистика<br>
-                        • Приоритетная поддержка
+                        • Приоритетная поддержка<br>
+                        • Расширенные функции привычек
                     </p>
                     <div style="display: flex; flex-direction: column; gap: 12px;">
                         <button onclick="upgradeToPremiumYooKassa()" style="background: #007bff; color: white; border: none; padding: 15px; border-radius: 8px; cursor: pointer; font-size: 16px;">
@@ -1123,7 +1249,7 @@
             .catch(error => {
                 console.error('YooKassa payment error:', error);
                 // Fallback для тестирования
-                if (confirm('👑 Премиум доступ:\n\n• Без рекламы\n• Эксклюзивные маршруты\n• Продвинутая статистика\n• Приоритетная поддержка\n\n99₽/месяц\n\nТестовая покупка?')) {
+                if (confirm('👑 Премиум доступ:\n\n• Без рекламы\n• Приоритетная поддержка\n• Расширенные функции привычек\n\n99₽/месяц\n\nТестовая покупка?')) {
                     activatePremiumDemo('99 ₽');
                 }
             });
@@ -1135,7 +1261,7 @@
             if (window.Telegram && window.Telegram.WebApp) {
                 const invoiceData = {
                     title: 'VeloPath Premium',
-                    description: '👑 Премиум доступ на 1 месяц:\n\n• Без рекламы\n• Эксклюзивные маршруты\n• Продвинутая статистика\n• Приоритетная поддержка',
+                    description: '👑 Премиум доступ на 1 месяц:\n\n• Без рекламы\n• Приоритетная поддержка\n• Расширенные функции привычек',
                     payload: 'premium_subscription_1month',
                     currency: 'XTR',
                     prices: [
@@ -1169,13 +1295,13 @@
                 .catch(error => {
                     console.error('Payment error:', error);
                     // Fallback для тестирования
-                    if (confirm('👑 Премиум доступ:\n\n• Без рекламы\n• Эксклюзивные маршруты\n• Продвинутая статистика\n\n99 Stars/месяц\n\nТестовая покупка?')) {
+                    if (confirm('👑 Премиум доступ:\n\n• Без рекламы\n• Приоритетная поддержка\n• Расширенные функции привычек\n\n99 Stars/месяц\n\nТестовая покупка?')) {
                         activatePremiumDemo('99 ⭐');
                     }
                 });
             } else {
                 // Fallback для десктопа
-                if (confirm('👑 Премиум доступ:\n\n• Без рекламы\n• Эксклюзивные маршруты\n• Продвинутая статистика\n\n99 Stars/месяц\n\nТестовая покупка?')) {
+                if (confirm('👑 Премиум доступ:\n\n• Без рекламы\n• Приоритетная поддержка\n• Расширенные функции привычек\n\n99 Stars/месяц\n\nТестовая покупка?')) {
                     activatePremiumDemo('99 ⭐');
                 }
             }

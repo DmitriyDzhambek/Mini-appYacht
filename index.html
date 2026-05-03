@@ -1032,14 +1032,23 @@
             } else {
                 habitsList.innerHTML = state.habits.map(habit => `
                     <div class="habit-item" style="background:rgba(255,255,255,0.9);border-radius:8px;padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;border:1px solid rgba(0,0,0,0.1);">
-                        <div style="display:flex;align-items:center;gap:10px;">
-                            <input type="checkbox" ${habit.completed ? 'checked' : ''} onchange="toggleHabit(${habit.id})" style="width:20px;height:20px;">
-                            <span style="${habit.completed ? 'text-decoration:line-through;opacity:0.6;' : ''}color:#333;">${habit.name}</span>
+                        <div style="flex:1;">
+                            <div style="font-weight:bold;color:#333;">${habit.name}</div>
+                            <div style="font-size:12px;color:#666;">${habit.date}</div>
                         </div>
-                        <button onclick="deleteHabit(${habit.id})" style="background:#ff4444;color:white;border:none;padding:5px 10px;border-radius:5px;cursor:pointer;">🗑️</button>
+                        <div style="display:flex;gap:8px;align-items:center;">
+                            <input type="checkbox" ${habit.completed ? 'checked' : ''} onchange="toggleHabit(${habit.id})" style="transform:scale(1.2);">
+                            <button onclick="deleteHabit(${habit.id})" style="background:#ff4444;color:white;border:none;padding:5px 10px;border-radius:5px;cursor:pointer;">🗑️</button>
+                        </div>
                     </div>
                 `).join('');
             }
+            // Автоматически сохраняем при каждом обновлении
+            saveState();
+            saveUserAction('habits_display_updated', { 
+                habits_count: state.habits.length,
+                completed_count: state.habits.filter(h => h.completed).length
+            });
             updateLifeSpheresDisplay();
             updateThoughtsDisplay();
         }
@@ -1053,16 +1062,91 @@
                         sphereDiv.innerHTML = '<div class="empty-state" style="font-size:12px;color:#666;">Нет мыслей</div>';
                     } else {
                         sphereDiv.innerHTML = thoughts.map((thought, index) => `
-                            <div style="background:rgba(255,255,255,0.8);border-radius:6px;padding:8px;margin-bottom:6px;border:1px solid rgba(0,0,0,0.05);">
-                                <div style="display:flex;justify-content:space-between;align-items:center;">
-                                    <span style="font-size:12px;color:#333;">${thought}</span>
-                                    <button onclick="deleteThought('${sphere}', ${index})" style="background:#ff4444;color:white;border:none;padding:2px 6px;border-radius:3px;cursor:pointer;font-size:10px;">×</button>
-                                </div>
+                            <div style="background:rgba(255,255,255,0.8);border-radius:5px;padding:8px;margin-bottom:5px;border:1px solid rgba(0,0,0,0.1);">
+                                <div style="font-size:12px;color:#333;">${thought.text}</div>
+                                <div style="font-size:10px;color:#666;">${thought.date}</div>
+                                <button onclick="deleteThought('${sphere}', ${index})" style="background:#ff4444;color:white;border:none;padding:2px 6px;border-radius:3px;cursor:pointer;font-size:10px;">🗑️</button>
                             </div>
                         `).join('');
                     }
                 }
             });
+            // Автоматически сохраняем при каждом обновлении
+            saveState();
+            saveUserAction('life_spheres_display_updated', { 
+                spheres_count: Object.keys(state.lifeSpheres).length,
+                total_thoughts: Object.values(state.lifeSpheres).reduce((sum, thoughts) => sum + thoughts.length, 0)
+            });
+        }
+        
+        function addThought(sphere) {
+            const thought = prompt(`Добавить мысль в сферу "${sphere}":`);
+            if (thought && thought.trim()) {
+                if (!state.lifeSpheres[sphere]) {
+                    state.lifeSpheres[sphere] = [];
+                }
+                const newThought = {
+                    id: Date.now(),
+                    text: thought.trim(),
+                    date: new Date().toLocaleDateString()
+                };
+                state.lifeSpheres[sphere].push(newThought);
+                updateLifeSpheresDisplay();
+                saveState();
+                saveUserAction('thought_added', { 
+                    sphere: sphere, 
+                    thought_text: thought.trim(), 
+                    thought_id: newThought.id 
+                });
+            }
+        }
+        
+        function deleteThought(sphere, index) {
+            if (confirm('Удалить эту мысль?')) {
+                const thought = state.lifeSpheres[sphere][index];
+                state.lifeSpheres[sphere].splice(index, 1);
+                updateLifeSpheresDisplay();
+                saveState();
+                if (thought) {
+                    saveUserAction('thought_deleted', { 
+                        sphere: sphere, 
+                        thought_id: thought.id,
+                        thought_text: thought.text
+                    });
+                }
+            }
+        }
+        
+        function addGeneralThought() {
+            const thought = prompt('Добавить мысль:');
+            if (thought && thought.trim()) {
+                const newThought = {
+                    text: thought.trim(),
+                    date: new Date().toLocaleDateString()
+                };
+                state.userThoughts.push(newThought);
+                updateThoughtsDisplay();
+                saveState();
+                saveUserAction('general_thought_added', { 
+                    thought_text: thought.trim(),
+                    thought_date: newThought.date
+                });
+            }
+        }
+        
+        function deleteGeneralThought(index) {
+            if (confirm('Удалить эту мысль?')) {
+                const thought = state.userThoughts[index];
+                state.userThoughts.splice(index, 1);
+                updateThoughtsDisplay();
+                saveState();
+                if (thought) {
+                    saveUserAction('general_thought_deleted', { 
+                        thought_text: thought.text,
+                        thought_date: thought.date
+                    });
+                }
+            }
         }
         
         function updateThoughtsDisplay() {
@@ -1082,43 +1166,11 @@
                     </div>
                 `).join('');
             }
-        }
-        
-        function addThought(sphere) {
-            const thought = prompt(`Добавить мысль в сферу "${sphere}":`);
-            if (thought && thought.trim()) {
-                state.lifeSpheres[sphere].push(thought.trim());
-                updateLifeSpheresDisplay();
-                saveState();
-            }
-        }
-        
-        function deleteThought(sphere, index) {
-            if (confirm('Удалить эту мысль?')) {
-                state.lifeSpheres[sphere].splice(index, 1);
-                updateLifeSpheresDisplay();
-                saveState();
-            }
-        }
-        
-        function addGeneralThought() {
-            const thought = prompt('Добавить мысль:');
-            if (thought && thought.trim()) {
-                state.userThoughts.push({
-                    text: thought.trim(),
-                    date: new Date().toLocaleDateString()
-                });
-                updateThoughtsDisplay();
-                saveState();
-            }
-        }
-        
-        function deleteGeneralThought(index) {
-            if (confirm('Удалить эту мысль?')) {
-                state.userThoughts.splice(index, 1);
-                updateThoughtsDisplay();
-                saveState();
-            }
+            // Автоматически сохраняем при каждом обновлении
+            saveState();
+            saveUserAction('thoughts_display_updated', { 
+                thoughts_count: state.userThoughts.length
+            });
         }
 
         // Монетизация функции
@@ -1283,7 +1335,7 @@
         
         function upgradeToPremiumTelegramStars() {
             closePaymentModal();
-            // Отправляем инвойс через Telegram WebApp
+            // Отправляем инвойс напрямую через Telegram WebApp API
             if (window.Telegram && window.Telegram.WebApp) {
                 const telegramId = window.Telegram.WebApp.initDataUnsafe?.user?.id;
                 
@@ -1292,6 +1344,7 @@
                     return;
                 }
                 
+                // Создаем инвойс напрямую через WebApp API
                 const invoiceData = {
                     title: 'VeloPath Premium',
                     description: '👑 Премиум доступ на 1 месяц:\n\n• Без рекламы\n• Приоритетная поддержка\n• Расширенные функции привычек',
@@ -1305,30 +1358,29 @@
                     ]
                 };
                 
-                // Отправляем данные на сервер для создания инвойса
-                fetch('https://your-payment-server.com/api/create-invoice', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        user_id: telegramId,
-                        invoice_data: invoiceData
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Открываем инвойс в Telegram через WebApp API
-                        window.Telegram.WebApp.openInvoice(data.invoice_url);
-                    } else {
-                        alert('Ошибка создания платежа: ' + data.error);
-                    }
-                })
-                .catch(error => {
-                    console.error('Payment error:', error);
-                    alert('Ошибка подключения к платежной системе. Попробуйте позже.');
-                });
+                // Отправляем инвойс напрямую через WebApp
+                window.Telegram.WebApp.sendData(JSON.stringify({
+                    action: 'create_invoice',
+                    invoice: invoiceData
+                }));
+                
+                // Альтернативный метод - открытие инвойса
+                try {
+                    window.Telegram.WebApp.openInvoice({
+                        title: invoiceData.title,
+                        description: invoiceData.description,
+                        payload: invoiceData.payload,
+                        currency: invoiceData.currency,
+                        prices: invoiceData.prices
+                    });
+                } catch (error) {
+                    console.error('Invoice error:', error);
+                    // Fallback - отправляем запрос боту
+                    window.Telegram.WebApp.sendData(JSON.stringify({
+                        action: 'request_premium_payment',
+                        method: 'telegram_stars'
+                    }));
+                }
             } else {
                 alert('Для оплаты необходимо использовать Telegram WebApp');
             }

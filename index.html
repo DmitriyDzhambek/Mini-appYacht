@@ -1240,7 +1240,13 @@
         
         function upgradeToPremiumYooKassa() {
             closePaymentModal();
-            const telegramId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id || 'demo_user';
+            const telegramId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
+            
+            if (!telegramId) {
+                alert('Для оплаты необходимо использовать Telegram WebApp');
+                return;
+            }
+            
             const amount = 99.00; // 99 рублей
             
             fetch('https://your-payment-server.com/api/yookassa/create-payment', {
@@ -1271,10 +1277,7 @@
             })
             .catch(error => {
                 console.error('YooKassa payment error:', error);
-                // Fallback для тестирования
-                if (confirm('👑 Премиум доступ:\n\n• Без рекламы\n• Приоритетная поддержка\n• Расширенные функции привычек\n\n99₽/месяц\n\nТестовая покупка?')) {
-                    activatePremiumDemo('99 ₽');
-                }
+                alert('Ошибка подключения к платежной системе. Попробуйте позже.');
             });
         }
         
@@ -1282,6 +1285,13 @@
             closePaymentModal();
             // Отправляем инвойс через Telegram WebApp
             if (window.Telegram && window.Telegram.WebApp) {
+                const telegramId = window.Telegram.WebApp.initDataUnsafe?.user?.id;
+                
+                if (!telegramId) {
+                    alert('Для оплаты необходимо использовать Telegram WebApp');
+                    return;
+                }
+                
                 const invoiceData = {
                     title: 'VeloPath Premium',
                     description: '👑 Премиум доступ на 1 месяц:\n\n• Без рекламы\n• Приоритетная поддержка\n• Расширенные функции привычек',
@@ -1302,7 +1312,7 @@
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        user_id: window.Telegram.WebApp.initDataUnsafe?.user?.id,
+                        user_id: telegramId,
                         invoice_data: invoiceData
                     })
                 })
@@ -1317,27 +1327,14 @@
                 })
                 .catch(error => {
                     console.error('Payment error:', error);
-                    // Fallback для тестирования
-                    if (confirm('👑 Премиум доступ:\n\n• Без рекламы\n• Приоритетная поддержка\n• Расширенные функции привычек\n\n99 Stars/месяц\n\nТестовая покупка?')) {
-                        activatePremiumDemo('99 ⭐');
-                    }
+                    alert('Ошибка подключения к платежной системе. Попробуйте позже.');
                 });
             } else {
-                // Fallback для десктопа
-                if (confirm('👑 Премиум доступ:\n\n• Без рекламы\n• Приоритетная поддержка\n• Расширенные функции привычек\n\n99 Stars/месяц\n\nТестовая покупка?')) {
-                    activatePremiumDemo('99 ⭐');
-                }
+                alert('Для оплаты необходимо использовать Telegram WebApp');
             }
         }
         
-        function activatePremiumDemo(amount) {
-            state.premium = true;
-            state.premiumEndDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-            // Не добавляем транзакцию в историю для демо режима
-            updateDisplay();
-            alert('✅ Премиум активирован! Спасибо за поддержку!');
-        }
-        
+                
         function addRealTransaction(type, amount, description) {
             state.transactions.unshift({
                 type: type,
